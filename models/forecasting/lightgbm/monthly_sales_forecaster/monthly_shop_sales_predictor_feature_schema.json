@@ -1,0 +1,93 @@
+{
+  "feature_names": [
+    "shop_id",
+    "avg_monthly_price",
+    "unique_items",
+    "unique_categories",
+    "quarter",
+    "month_sin",
+    "month_cos",
+    "is_q4",
+    "is_year_end",
+    "is_year_start",
+    "monthly_sales_lag_1",
+    "monthly_sales_lag_2",
+    "monthly_sales_lag_3",
+    "monthly_sales_lag_6",
+    "monthly_sales_lag_12",
+    "yoy_growth",
+    "roll_mean_3",
+    "roll_std_3",
+    "roll_mean_6",
+    "roll_std_6",
+    "roll_mean_12",
+    "roll_std_12",
+    "seasonal_index",
+    "shop_avg_monthly",
+    "shop_std_monthly",
+    "shop_avg_price",
+    "monthly_trend_3m",
+    "sales_momentum",
+    "price_to_avg_ratio",
+    "sales_per_active_day",
+    "expanding_mean",
+    "expanding_std"
+  ],
+  "categorical_features": [
+    "shop_id",
+    "quarter",
+    "is_q4",
+    "is_year_end",
+    "is_year_start"
+  ],
+  "feature_groups": {
+    "monthly_lags": [
+      "monthly_sales_lag_1",
+      "monthly_sales_lag_2",
+      "monthly_sales_lag_3",
+      "monthly_sales_lag_6",
+      "monthly_sales_lag_12"
+    ],
+    "rolling_stats": [
+      "roll_mean_3",
+      "roll_std_3",
+      "roll_mean_6",
+      "roll_std_6",
+      "roll_mean_12",
+      "roll_std_12"
+    ],
+    "expanding_stats": [
+      "expanding_mean",
+      "expanding_std"
+    ],
+    "temporal_features": [
+      "avg_monthly_price",
+      "quarter",
+      "month_sin",
+      "month_cos",
+      "is_year_end",
+      "is_year_start",
+      "monthly_sales_lag_1",
+      "monthly_sales_lag_2",
+      "monthly_sales_lag_3",
+      "monthly_sales_lag_6",
+      "monthly_sales_lag_12",
+      "shop_avg_monthly",
+      "shop_std_monthly",
+      "monthly_trend_3m"
+    ],
+    "seasonal_features": [
+      "is_q4",
+      "is_year_end",
+      "is_year_start",
+      "yoy_growth",
+      "seasonal_index"
+    ],
+    "shop_features": [
+      "shop_id",
+      "shop_avg_monthly",
+      "shop_std_monthly",
+      "shop_avg_price"
+    ]
+  }
+}

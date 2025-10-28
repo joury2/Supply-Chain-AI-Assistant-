@@ -1,0 +1,141 @@
+{
+  "model_identity": {
+    "id": "monthly_shop_sales_predictor_20251027_101846",
+    "name": "Monthly_Shop_Sales_Forecaster",
+    "type": "lightgbm_regression",
+    "domain": "retail_supply_chain",
+    "forecasting_frequency": "monthly",
+    "created_at": "20251027_101846"
+  },
+  "use_case_profile": {
+    "forecasting_type": "monthly_sales",
+    "granularity": "shop_level",
+    "horizon": "single_month",
+    "target_entity": "individual_shops",
+    "best_for": [
+      "monthly_inventory_budgeting",
+      "quarterly_planning",
+      "strategic_decision_making",
+      "resource_allocation",
+      "performance_forecasting",
+      "financial_planning"
+    ],
+    "not_recommended_for": [
+      "daily_operational_decisions",
+      "real_time_inventory_management",
+      "short_term_promotional_planning",
+      "item_level_forecasting"
+    ]
+  },
+  "performance_profile": {
+    "accuracy_metrics": {
+      "r2_score": 0.8853279918868332,
+      "rmse": 458.27060789023494,
+      "mape": 12.933978535514761,
+      "confidence_level": "high"
+    },
+    "training_quality": {
+      "best_iteration": 144,
+      "convergence_status": "early_stopped",
+      "data_sufficiency": "good"
+    }
+  },
+  "technical_specifications": {
+    "input_requirements": {
+      "required_entities": [
+        "shop_id",
+        "month",
+        "year"
+      ],
+      "minimum_history": "12_months",
+      "feature_set": "monthly_temporal_lags",
+      "data_frequency": "monthly"
+    },
+    "feature_dependencies": {
+      "critical_features": {
+        "sales_per_active_day": {
+          "rank": 1,
+          "importance_score": 474.0,
+          "type": "derived_feature",
+          "business_impact": "monthly_sales_predictor"
+        },
+        "unique_items": {
+          "rank": 2,
+          "importance_score": 459.0,
+          "type": "derived_feature",
+          "business_impact": "monthly_sales_predictor"
+        },
+        "monthly_sales_lag_1": {
+          "rank": 3,
+          "importance_score": 310.0,
+          "type": "historical_monthly_pattern",
+          "business_impact": "previous_month_sales_continuity"
+        },
+        "price_to_avg_ratio": {
+          "rank": 4,
+          "importance_score": 195.0,
+          "type": "derived_feature",
+          "business_impact": "monthly_sales_predictor"
+        },
+        "avg_monthly_price": {
+          "rank": 5,
+          "importance_score": 184.0,
+          "type": "temporal_context",
+          "business_impact": "monthly_sales_predictor"
+        }
+      },
+      "temporal_features": [
+        "avg_monthly_price",
+        "quarter",
+        "month_sin",
+        "month_cos",
+        "monthly_sales_lag_1",
+        "monthly_sales_lag_2",
+        "monthly_sales_lag_3",
+        "monthly_sales_lag_6",
+        "monthly_sales_lag_12",
+        "roll_mean_3",
+        "roll_std_3",
+        "roll_mean_6",
+        "roll_std_6",
+        "roll_mean_12",
+        "roll_std_12",
+        "shop_avg_monthly",
+        "shop_std_monthly",
+        "monthly_trend_3m"
+      ],
+      "entity_features": [
+        "shop_id"
+      ],
+      "seasonal_features": [
+        "is_q4",
+        "is_year_end",
+        "is_year_start",
+        "yoy_growth",
+        "seasonal_index"
+      ]
+    },
+    "compatibility": {
+      "shop_coverage": "trained_shops_only",
+      "time_period": "historical_monthly_patterns",
+      "seasonality_handling": "monthly_yearly"
+    }
+  },
+  "operational_profile": {
+    "inference_speed": "very_fast",
+    "resource_requirements": "very_low",
+    "update_frequency": "quarterly_retraining",
+    "stability": "high"
+  },
+  "business_value": {
+    "typical_accuracy": "88.5% variance explained",
+    "error_magnitude": "±458.3 units monthly",
+    "forecast_horizon": "1_month_ahead",
+    "suitable_business_cases": [
+      "monthly_sales_targets",
+      "inventory_budget_planning",
+      "staffing_allocation",
+      "financial_forecasting"
+    ]
+  }
+}

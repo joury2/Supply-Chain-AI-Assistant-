@@ -1,0 +1,151 @@
+{
+  "model_identity": {
+    "id": "daily_shop_sales_predictor_20251027_090434",
+    "name": "Daily_Shop_Sales_Forecaster",
+    "type": "lightgbm_regression",
+    "domain": "retail_supply_chain",
+    "created_at": "20251027_090434"
+  },
+  "use_case_profile": {
+    "forecasting_type": "daily_sales",
+    "granularity": "shop_level",
+    "horizon": "single_day",
+    "target_entity": "individual_shops",
+    "best_for": [
+      "next_day_sales_forecasting",
+      "shop_level_inventory_planning",
+      "daily_workforce_scheduling",
+      "short_term_demand_planning"
+    ],
+    "not_recommended_for": [
+      "item_level_forecasting",
+      "weekly_monthly_aggregates",
+      "new_shops_without_history",
+      "long_term_strategic_planning"
+    ]
+  },
+  "performance_profile": {
+    "accuracy_metrics": {
+      "r2_score": 0.780842964193053,
+      "rmse": 29.805287647584013,
+      "mape": 1.51,
+      "confidence_level": "high"
+    },
+    "training_quality": {
+      "best_iteration": 998,
+      "convergence_status": "fully_converged",
+      "data_sufficiency": "excellent"
+    }
+  },
+  "technical_specifications": {
+    "input_requirements": {
+      "required_entities": [
+        "shop_id",
+        "date"
+      ],
+      "minimum_history": "30_days",
+      "feature_set": "extended_temporal_lags",
+      "data_frequency": "daily"
+    },
+    "feature_dependencies": {
+      "critical_features": {
+        "unique_items": {
+          "rank": 1,
+          "importance_score": 6704.0,
+          "type": "derived_feature",
+          "business_impact": "general_predictor"
+        },
+        "items_per_transaction": {
+          "rank": 2,
+          "importance_score": 5573.0,
+          "type": "derived_feature",
+          "business_impact": "general_predictor"
+        },
+        "unique_categories": {
+          "rank": 3,
+          "importance_score": 3536.0,
+          "type": "derived_feature",
+          "business_impact": "general_predictor"
+        },
+        "shop_id": {
+          "rank": 4,
+          "importance_score": 3170.0,
+          "type": "entity_profile",
+          "business_impact": "general_predictor"
+        },
+        "transaction_count": {
+          "rank": 5,
+          "importance_score": 2026.0,
+          "type": "derived_feature",
+          "business_impact": "general_predictor"
+        }
+      },
+      "temporal_features": [
+        "day_of_week",
+        "day_of_month",
+        "month",
+        "is_month_start",
+        "is_month_end",
+        "day_sin",
+        "day_cos",
+        "month_sin",
+        "month_cos",
+        "is_holiday_season",
+        "sales_lag_1",
+        "sales_lag_2",
+        "sales_lag_3",
+        "sales_lag_7",
+        "sales_lag_14",
+        "sales_lag_21",
+        "sales_lag_30",
+        "roll_mean_3",
+        "roll_std_3",
+        "roll_median_3",
+        "roll_mean_7",
+        "roll_std_7",
+        "roll_median_7",
+        "roll_mean_14",
+        "roll_std_14",
+        "roll_median_14",
+        "roll_mean_30",
+        "roll_std_30",
+        "roll_median_30",
+        "roll_mean_60",
+        "roll_std_60",
+        "roll_median_60"
+      ],
+      "entity_features": [
+        "shop_id"
+      ],
+      "context_features": [
+        "is_weekend",
+        "is_month_start",
+        "is_month_end",
+        "is_new_year",
+        "is_summer",
+        "is_holiday_season"
+      ]
+    },
+    "compatibility": {
+      "shop_coverage": "trained_shops_only",
+      "time_period": "historical_patterns",
+      "seasonality_handling": "daily_weekly_yearly"
+    }
+  },
+  "operational_profile": {
+    "inference_speed": "fast",
+    "resource_requirements": "low",
+    "update_frequency": "monthly_retraining",
+    "stability": "high"
+  },
+  "business_value": {
+    "typical_accuracy": "78.1% variance explained",
+    "error_magnitude": "±29.8 units daily",
+    "suitable_business_cases": [
+      "daily_replenishment_decisions",
+      "shift_planning_optimization",
+      "promotional_impact_assessment",
+      "anomaly_detection"
+    ]
+  }
+}

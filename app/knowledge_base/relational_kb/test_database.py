@@ -5,7 +5,7 @@ import os
 # Add project root to path
 sys.path.insert(0, os.getcwd())
 
-from app.knowledge_base.relational_kb.sqlite_manger import SQLiteManager
+from app.knowledge_base.relational_kb.sqlite_manager import SQLiteManager
 
 def test_database():
     db = SQLiteManager(":memory:")

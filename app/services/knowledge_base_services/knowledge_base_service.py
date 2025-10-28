@@ -24,7 +24,7 @@ except ImportError as e:
     print(f"❌ Import error: {e}")
     print("Trying direct import...")
     # Fallback: try direct import
-    from app.knowledge_base.relational_kb.sqlite_manger import SQLiteManager
+    from app.knowledge_base.relational_kb.sqlite_manager import SQLiteManager
 
 class SupplyChainService:
     """

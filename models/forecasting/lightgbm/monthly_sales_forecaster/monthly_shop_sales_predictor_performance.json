@@ -1,0 +1,18 @@
+{
+  "training_info": {
+    "best_iteration": 144,
+    "n_features": 32,
+    "training_samples": 1265,
+    "validation_samples": 317
+  },
+  "validation_metrics": {
+    "rmse": 458.27060789023494,
+    "r2": 0.8853279918868332,
+    "mape": 12.933978535514761
+  },
+  "data_leak_prevention": {
+    "seasonal_index_calculation": "historical_data_only",
+    "feature_engineering": "lagged_values_only",
+    "time_split": "strict_chronological"
+  }
+}
