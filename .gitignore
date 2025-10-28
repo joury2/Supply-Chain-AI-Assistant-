@@ -1,0 +1,11 @@
+# Personal Media and Temporary Files
+####################################
+# Ignore the entire Pictures directory
+/scripts/Pictures/
+
+# Ignore common screenshot and image files recursively
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.gif
