@@ -1,7 +1,17 @@
-# Personal Media and Temporary Files
-####################################
-# Ignore the entire Pictures directory
-/scripts/Pictures/
+# Exclude all personal photos and screenshots
+scripts/Pictures/
+
+# General exclusions for project files (if not already present)
+# Virtual environment folder
+/venv
+# Database file
+supply_chain.db
+# Python bytecode
+__pycache__
+
+# Ignore temporary files
+*.log
+*.tmp
 
 # Ignore common screenshot and image files recursively
 *.png

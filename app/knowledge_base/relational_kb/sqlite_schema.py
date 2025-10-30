@@ -1,4 +1,4 @@
-# sqlite_schema.py
+# app/knowledge_base/relational_kb/sqlite_repository.py
 # This module provides a repository class for interacting with the SQLite database
 # defined in sqlite_schema.py. It includes methods for CRUD operations on dataset schemas,
 # to manage the entire Relational Knowledge Base (KB). 

@@ -1,3 +1,5 @@
 /config.local
 /tmp
 /cache
+# Exclude the directory containing personal photos and screenshots
+scripts/Pictures/

@@ -1,0 +1,96 @@
+# app/knowledge_base/Rule Layer/data_validation_rules.yaml
+version: "2.2"
+description: "Enhanced data validation rules with positive feedback and improved data type checking"
+rules:
+  # POSITIVE VALIDATIONS (NEW IMPROVEMENT)
+  - name: "data_quality_excellent"
+    description: "Acknowledge high-quality data"
+    condition: "dataset.get('missing_percentage', 0) < 0.05 and dataset.get('row_count', 0) >= 100"
+    action: "ACCEPT"
+    priority: 1
+    message: "Excellent data quality detected - optimal for forecasting"
+
+  - name: "time_series_data_valid"
+    description: "Validate complete time series data"
+    condition: "'date' in dataset.get('columns', []) and dataset.get('frequency') in ['daily', 'weekly', 'monthly'] and dataset.get('row_count', 0) >= 30"
+    action: "ACCEPT"
+    priority: 2
+    message: "Valid time series data structure detected"
+
+  # Critical validations (REJECT)
+  - name: "min_data_points_critical"
+    description: "Minimum data points for any forecasting"
+    condition: "dataset.get('row_count', 0) < 12"
+    action: "REJECT"
+    priority: 10
+    message: "Insufficient data points. Minimum 12 required for reliable forecasting."
+
+  - name: "data_quality_high_missing"
+    description: "Check for high percentage of missing values"
+    condition: "dataset.get('missing_percentage', 0) > 0.3"
+    action: "REJECT"
+    priority: 9
+    message: "Too many missing values (>30%). Please clean data before forecasting."
+
+  # IMPROVED TARGET COLUMN DETECTION (YOUR ENHANCEMENT)
+  - name: "missing_target_column_improved"
+    description: "Check if any known target column is present (configurable patterns)"
+    condition: |
+      not any(target in dataset.get('columns', []) 
+      for target in ['sales', 'demand', 'value', 'target', 'quantity', 'revenue', 'volume'])
+    action: "REJECT"
+    priority: 8
+    message: "No target column found. Expected: sales, demand, value, target, quantity, revenue, or volume."
+
+  # DATA TYPE VALIDATIONS (YOUR ENHANCEMENT)
+  - name: "numeric_target_validation"
+    description: "Ensure target column is numeric"
+    condition: "dataset.get('target_column_type') != 'numeric' and dataset.get('target_column')"
+    action: "WARN"
+    priority: 6
+    message: "Target column may not be numeric - ensure conversion for regression models"
+
+  - name: "date_format_validation"
+    description: "Warn about potential date format issues"
+    condition: "'date' in dataset.get('columns', []) and dataset.get('date_column_type') != 'datetime'"
+    action: "WARN"
+    priority: 5
+    message: "Date column may need format conversion for time series models"
+
+  # Enhanced validation: Check for temporal coherence
+  - name: "temporal_coherence_check"
+    description: "Validate time series data has consistent temporal structure"
+    condition: "dataset.get('frequency') in ['daily', 'weekly', 'monthly'] and dataset.get('temporal_gaps_detected', False) == True"
+    action: "WARN"
+    priority: 7
+    message: "Temporal gaps detected in time series data. This may affect forecast accuracy."
+
+  # Warnings
+  - name: "data_quality_moderate_missing"
+    description: "Warn about moderate missing values"
+    condition: "dataset.get('missing_percentage', 0) > 0.1 and dataset.get('missing_percentage', 0) <= 0.3"
+    action: "WARN"
+    priority: 5
+    message: "Moderate missing values detected (10-30%). Consider imputation."
+
+  - name: "limited_data_points"
+    description: "Warn about limited data"
+    condition: "dataset.get('row_count', 0) < 50"
+    action: "WARN"
+    priority: 4
+    message: "Limited data points. Consider collecting more data for better accuracy."
+
+  - name: "missing_date_column"
+    description: "Warn if date column is missing for time series"
+    condition: "dataset.get('frequency') != 'none' and 'date' not in dataset.get('columns', []) and 'timestamp' not in dataset.get('columns', [])"
+    action: "WARN"
+    priority: 4
+    message: "Time series data detected but no date/timestamp column found."
+
+  # Enhanced validation: Seasonal data check
+  - name: "seasonal_data_sufficiency"
+    description: "Check if sufficient seasonal data is available"
+    condition: "dataset.get('frequency') == 'monthly' and dataset.get('row_count', 0) < 24"
+    action: "WARN"
+    priority: 3
+    message: "Limited seasonal data. For monthly data, 24+ months recommended for capturing seasonal patterns."

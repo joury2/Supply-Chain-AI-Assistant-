@@ -1,4 +1,4 @@
-# database/sqlite_schema.py
+# app/knowledge_base/relational_kb/sqlite_manager.py
 # This module defines the SQLite database schema for managing dataset schemas,
 # column definitions, machine learning models, performance history, forecast runs,
 # and feature importance.
