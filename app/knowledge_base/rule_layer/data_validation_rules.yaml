@@ -2,7 +2,7 @@
 version: "2.2"
 description: "Enhanced data validation rules with positive feedback and improved data type checking"
 rules:
-  # POSITIVE VALIDATIONS (NEW IMPROVEMENT)
+  # POSITIVE VALIDATIONS
   - name: "data_quality_excellent"
     description: "Acknowledge high-quality data"
     condition: "dataset.get('missing_percentage', 0) < 0.05 and dataset.get('row_count', 0) >= 100"
@@ -32,38 +32,13 @@ rules:
     priority: 9
     message: "Too many missing values (>30%). Please clean data before forecasting."
 
-  # IMPROVED TARGET COLUMN DETECTION (YOUR ENHANCEMENT)
+  # IMPROVED TARGET COLUMN DETECTION
   - name: "missing_target_column_improved"
-    description: "Check if any known target column is present (configurable patterns)"
-    condition: |
-      not any(target in dataset.get('columns', []) 
-      for target in ['sales', 'demand', 'value', 'target', 'quantity', 'revenue', 'volume'])
+    description: "Check if any known target column is present"
+    condition: "not any(target in dataset.get('columns', []) for target in ['sales', 'demand', 'value', 'target', 'quantity', 'revenue', 'volume'])"
     action: "REJECT"
     priority: 8
     message: "No target column found. Expected: sales, demand, value, target, quantity, revenue, or volume."
-
-  # DATA TYPE VALIDATIONS (YOUR ENHANCEMENT)
-  - name: "numeric_target_validation"
-    description: "Ensure target column is numeric"
-    condition: "dataset.get('target_column_type') != 'numeric' and dataset.get('target_column')"
-    action: "WARN"
-    priority: 6
-    message: "Target column may not be numeric - ensure conversion for regression models"
-
-  - name: "date_format_validation"
-    description: "Warn about potential date format issues"
-    condition: "'date' in dataset.get('columns', []) and dataset.get('date_column_type') != 'datetime'"
-    action: "WARN"
-    priority: 5
-    message: "Date column may need format conversion for time series models"
-
-  # Enhanced validation: Check for temporal coherence
-  - name: "temporal_coherence_check"
-    description: "Validate time series data has consistent temporal structure"
-    condition: "dataset.get('frequency') in ['daily', 'weekly', 'monthly'] and dataset.get('temporal_gaps_detected', False) == True"
-    action: "WARN"
-    priority: 7
-    message: "Temporal gaps detected in time series data. This may affect forecast accuracy."
 
   # Warnings
   - name: "data_quality_moderate_missing"
@@ -94,3 +69,11 @@ rules:
     action: "WARN"
     priority: 3
     message: "Limited seasonal data. For monthly data, 24+ months recommended for capturing seasonal patterns."
+
+  # Data structure validation
+  - name: "good_data_structure"
+    description: "Acknowledge well-structured data"
+    condition: "'date' in dataset.get('columns', []) and any(target in dataset.get('columns', []) for target in ['sales', 'demand', 'quantity']) and dataset.get('row_count', 0) >= 50"
+    action: "ACCEPT"
+    priority: 2
+    message: "Well-structured time series data with clear target variable"

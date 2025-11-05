@@ -1,0 +1,28 @@
+# RAG + LangChain Dependencies
+# Add these to your existing requirements.txt
+
+# Core LangChain
+langchain>=0.1.0
+langchain-community>=0.0.20
+langchain-nvidia-ai-endpoints>=0.0.11
+
+# Vector Store & Embeddings
+faiss-cpu>=1.7.4
+sentence-transformers>=2.2.2
+
+# HuggingFace
+huggingface-hub>=0.19.0
+transformers>=4.35.0
+
+# Utilities (if not already installed)
+python-dotenv>=1.0.0
+pyyaml>=6.0
+numpy
+pandas
+
+# Streamlit (if not already installed)
+streamlit
+plotly
+
+# Optional but recommended
+tiktoken>=0.5.0  # For token counting

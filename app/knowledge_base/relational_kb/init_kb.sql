@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS Rules (
 CREATE TABLE IF NOT EXISTS ML_Models (
     model_id INTEGER PRIMARY KEY AUTOINCREMENT,
     model_name TEXT NOT NULL,
-    model_type TEXT CHECK(model_type IN ('time_series', 'regression', 'classification', 'ensemble')),
+    model_type TEXT,
     model_path TEXT NOT NULL,
     required_features TEXT NOT NULL,
     optional_features TEXT,
@@ -52,6 +52,8 @@ CREATE TABLE IF NOT EXISTS ML_Models (
     training_config TEXT,
     dataset_id INTEGER REFERENCES Dataset_Schemas(dataset_id),
     hyperparameters TEXT,
+    best_for TEXT, 
+    not_recommended_for TEXT,
     is_active BOOLEAN DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

@@ -1,0 +1,46 @@
+{
+  "required_columns": [
+    "ds",
+    "y"
+  ],
+  "required_regressors": [
+    "is_saturday",
+    "is_sunday"
+  ],
+  "optional_regressors": [
+    "unique_customers",
+    "avg_revenue"
+  ],
+  "column_descriptions": {
+    "ds": "date column (YYYY-MM-DD)",
+    "y": "daily_order_count (target)",
+    "is_saturday": "saturday indicator (1 if Saturday, 0 otherwise)",
+    "is_sunday": "sunday indicator (1 if Sunday, 0 otherwise)",
+    "unique_customers": "number of unique customers daily",
+    "avg_revenue": "average revenue per day"
+  },
+  "data_types": {
+    "ds": "datetime64[ns]",
+    "y": "float64",
+    "is_saturday": "int64",
+    "is_sunday": "int64",
+    "unique_customers": "int64",
+    "avg_revenue": "float64"
+  },
+  "feature_groups": {
+    "temporal_features": [
+      "ds"
+    ],
+    "weekend_regressors": [
+      "is_saturday",
+      "is_sunday"
+    ],
+    "business_regressors": [
+      "unique_customers",
+      "avg_revenue"
+    ],
+    "target_variable": [
+      "y"
+    ]
+  }
+}

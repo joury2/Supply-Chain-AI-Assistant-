@@ -251,6 +251,7 @@ class SQLiteManager:
         
         print("🎉 Sample data insertion completed successfully!")
     
+
     def execute_query(self, query: str, params: tuple = ()) -> List[Dict[str, Any]]:
         """Execute a query and return results as dictionaries"""
         cursor = self.conn.execute(query, params)

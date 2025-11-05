@@ -1,812 +1,641 @@
 # app/knowledge_base/rule_layer/rule_engine.py
-# Enhanced Rule Engine Service with Caching, Performance Metrics, and Export Capabilities
-import sys
+# Base Rule Engine Class - Core rule processing logic
 import os
-import time
-import json
-import hashlib
-from typing import Dict, List, Any, Optional
+import sys
+import yaml
 import logging
-
-# Add project root to path
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-sys.path.insert(0, project_root)
+from typing import Dict, List, Any, Optional
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Import RuleEngine with proper error handling
-RuleEngine = None
-USE_REAL_ENGINE = False
-
-try:
-    from app.knowledge_base.rule_layer.rule_engine import RuleEngine
-    USE_REAL_ENGINE = True
-    logger.info("✅ Using REAL RuleEngine with YAML rules")
-except ImportError as e:
-    logger.error(f"❌ Could not import real RuleEngine: {e}")
-    USE_REAL_ENGINE = False
+# Add project root to path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, project_root)
 
 
-class RuleEngineService:
+class RuleEngine:
     """
-    Enhanced service wrapper for the REAL Rule Engine with caching, performance metrics, and export capabilities
+    Core Rule Engine - Handles validation and model selection using YAML rules
+    WORKS WITH METADATA ONLY - NO DATAFRAME OBJECTS
     """
     
     def __init__(self, db_connection=None):
+        """Initialize the rule engine and load YAML rules"""
         self.db_connection = db_connection
-        self._model_cache = None
-        self._analysis_cache = {}
-        self._compatibility_cache = {}
-        
-        if USE_REAL_ENGINE and RuleEngine is not None:
-            self.rule_engine = RuleEngine(db_connection)
-            logger.info("✅ Rule Engine Service initialized with REAL rule processing")
-        else:
-            # Use minimal fallback
-            self.rule_engine = MinimalRuleEngine()
-            logger.info("⚠️ Using minimal rule engine fallback")
-
-    def _generate_dataset_hash(self, dataset_info: Dict[str, Any]) -> str:
-        """Generate unique hash for dataset to enable caching"""
-        dataset_str = json.dumps(dataset_info, sort_keys=True)
-        return hashlib.md5(dataset_str.encode()).hexdigest()
-
-    def analyze_dataset(self, dataset_info: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Comprehensive dataset analysis with caching and performance tracking
-        """
-        start_time = time.time()
-        dataset_hash = self._generate_dataset_hash(dataset_info)
-        
-        # Check cache first
-        if dataset_hash in self._analysis_cache:
-            logger.info("📊 Returning cached analysis")
-            cached_result = self._analysis_cache[dataset_hash]
-            # Update performance metrics for cached result
-            cached_result['performance_metrics'] = {
-                'analysis_time_seconds': time.time() - start_time,
-                'cached': True,
-                'models_analyzed': len(cached_result.get('selection_analysis', {}).get('analysis', {}).get('compatible_models', [])),
-                'recommendations_generated': len(cached_result.get('recommendations', []))
-            }
-            return cached_result
-        
-        logger.info(f"🔍 Analyzing dataset: {dataset_info.get('name', 'Unknown')}")
-        
-        try:
-            # Step 1: Data Validation
-            validation_result = self.rule_engine.validate_dataset(dataset_info)
-            
-            # Step 2: Model Selection with detailed analysis
-            selection_analysis = self._analyze_model_selection(dataset_info, validation_result)
-            
-            # Step 3: Generate comprehensive recommendations
-            recommendations = self._generate_comprehensive_recommendations(
-                validation_result, selection_analysis, dataset_info
-            )
-            
-            result = {
-                'validation': validation_result,
-                'model_selection': selection_analysis['result'],
-                'selection_analysis': selection_analysis,
-                'recommendations': recommendations,
-                'summary': self._generate_detailed_summary(validation_result, selection_analysis, recommendations)
-            }
-            
-            # Add performance metrics
-            execution_time = time.time() - start_time
-            result['performance_metrics'] = {
-                'analysis_time_seconds': execution_time,
-                'cached': False,
-                'models_analyzed': len(selection_analysis.get('analysis', {}).get('compatible_models', [])),
-                'rules_evaluated': len(validation_result.get('applied_rules', [])),
-                'recommendations_generated': len(recommendations),
-                'throughput_models_per_second': len(selection_analysis.get('analysis', {}).get('compatible_models', [])) / max(execution_time, 0.001)
-            }
-            
-            # Cache the result
-            self._analysis_cache[dataset_hash] = result
-            logger.info(f"✅ Analysis completed in {execution_time:.3f}s, cached for future use")
-            
-            return result
-            
-        except Exception as e:
-            execution_time = time.time() - start_time
-            logger.error(f"❌ Analysis failed after {execution_time:.2f}s: {e}")
-            raise
-    
-    def _analyze_model_selection(self, dataset_info: Dict[str, Any], validation_result: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Analyze why models are or aren't being selected with detailed reasons
-        """
-        if not validation_result['valid']:
-            return {
-                'result': {
-                    'selected_model': None,
-                    'confidence': 0.0,
-                    'reason': 'Dataset validation failed',
-                    'model_type': None
-                },
-                'analysis': {
-                    'can_proceed': False,
-                    'rejection_reason': 'DATA_VALIDATION_FAILED',
-                    'failed_checks': validation_result.get('errors', []),
-                    'model_compatibility': [],
-                    'missing_requirements': validation_result.get('errors', [])
-                }
-            }
-        
-        # Try to select a model
-        selection_result = self.rule_engine.select_model(dataset_info)
-        
-        if selection_result.get('selected_model'):
-            # Model was selected successfully
-            return {
-                'result': selection_result,
-                'analysis': {
-                    'can_proceed': True,
-                    'rejection_reason': None,
-                    'failed_checks': [],
-                    'model_compatibility': [{
-                        'model': selection_result['selected_model'],
-                        'match_reason': selection_result.get('reason', 'Rule matched'),
-                        'confidence': selection_result.get('confidence', 0.0)
-                    }],
-                    'missing_requirements': []
-                }
-            }
-        else:
-            # No model selected - analyze why
-            compatibility_analysis = self._analyze_model_compatibility(dataset_info)
-            
-            return {
-                'result': selection_result,
-                'analysis': {
-                    'can_proceed': False,
-                    'rejection_reason': 'NO_COMPATIBLE_MODELS',
-                    'failed_checks': [],
-                    'model_compatibility': compatibility_analysis['compatible_models'],
-                    'missing_requirements': compatibility_analysis['missing_requirements']
-                }
-            }
-    
-    def _analyze_model_compatibility(self, dataset_info: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Enhanced compatibility analysis with scoring and caching
-        """
-        dataset_hash = self._generate_dataset_hash(dataset_info)
-        
-        # Check cache first
-        if dataset_hash in self._compatibility_cache:
-            logger.debug("Returning cached compatibility analysis")
-            return self._compatibility_cache[dataset_hash]
-        
-        try:
-            from app.services.knowledge_base_services.core.knowledge_base_service import SupplyChainService as KnowledgeBaseService
-            kb_service = KnowledgeBaseService("supply_chain.db")
-            all_models = kb_service.get_all_models()
-            kb_service.close()
-        except Exception as e:
-            logger.error(f"❌ Could not load models from knowledge base: {e}")
-            # Fallback if KB service is not available
-            all_models = []
-        
-        compatible_models = []
-        missing_requirements = []
-        dataset_columns = set(dataset_info.get('columns', []))
-        
-        for model in all_models:
-            model_name = model['model_name']
-            required_features = self._parse_required_features(model.get('required_features', []))
-            optional_features = self._parse_required_features(model.get('optional_features', []))
-            target_variable = model.get('target_variable', 'unknown')
-            
-            # ENHANCED: Calculate compatibility score (0-100)
-            required_match = sum(1 for f in required_features if f in dataset_columns)
-            optional_match = sum(1 for f in optional_features if f in dataset_columns)
-            
-            # Calculate compatibility score with weights
-            required_score = (required_match / max(len(required_features), 1)) * 70  # 70% weight
-            optional_score = (optional_match / max(len(optional_features), 1)) * 30  # 30% weight
-            compatibility_score = required_score + optional_score
-            
-            # Check target variable - use flexible matching
-            has_target = (
-                target_variable in dataset_columns or 
-                any(target in dataset_columns for target in ['sales', 'demand', 'value', 'target', 'quantity', 'revenue', 'volume'])
-            )
-            
-            # Adjust score based on target availability
-            if not has_target:
-                compatibility_score *= 0.5  # Halve score if target missing
-            
-            if compatibility_score == 100 and has_target:
-                # Model is fully compatible
-                compatible_models.append({
-                    'model_name': model_name,
-                    'model_type': model.get('model_type', 'unknown'),
-                    'compatibility_score': compatibility_score,
-                    'status': 'fully_compatible',
-                    'match_reason': "All required features and target available",
-                    'matching_features': [f for f in required_features if f in dataset_columns],
-                    'target_variable': target_variable,
-                    'performance_metrics': json.loads(model.get('performance_metrics', '{}'))
-                })
-            elif compatibility_score >= 70 and has_target:
-                # Model is partially compatible
-                compatible_models.append({
-                    'model_name': model_name,
-                    'model_type': model.get('model_type', 'unknown'),
-                    'compatibility_score': compatibility_score,
-                    'status': 'partially_compatible',
-                    'match_reason': f"Partially compatible ({compatibility_score:.1f}%)",
-                    'matching_features': [f for f in required_features if f in dataset_columns],
-                    'missing_required': [f for f in required_features if f not in dataset_columns],
-                    'target_variable': target_variable,
-                    'performance_metrics': json.loads(model.get('performance_metrics', '{}'))
-                })
-            else:
-                # Model is incompatible - record why
-                requirement_issues = []
-                missing_req_features = [f for f in required_features if f not in dataset_columns]
-                
-                if missing_req_features:
-                    if len(missing_req_features) > 3:
-                        shown_features = missing_req_features[:3]
-                        requirement_issues.append(f"Missing features: {', '.join(shown_features)} + {len(missing_req_features) - 3} more")
-                    else:
-                        requirement_issues.append(f"Missing features: {', '.join(missing_req_features)}")
-                
-                if not has_target:
-                    requirement_issues.append(f"Missing target variable: {target_variable}")
-                
-                missing_requirements.append({
-                    'model_name': model_name,
-                    'model_type': model.get('model_type', 'unknown'),
-                    'compatibility_score': compatibility_score,
-                    'issues': requirement_issues,
-                    'required_features': required_features,
-                    'target_variable': target_variable,
-                    'missing_required_count': len(missing_req_features),
-                    'has_target': has_target
-                })
-        
-        # Sort compatible models by score (descending)
-        compatible_models.sort(key=lambda x: x['compatibility_score'], reverse=True)
-        
-        result = {
-            'compatible_models': compatible_models,
-            'missing_requirements': missing_requirements,
-            'total_models_analyzed': len(all_models),
-            'compatibility_summary': {
-                'fully_compatible': len([m for m in compatible_models if m['status'] == 'fully_compatible']),
-                'partially_compatible': len([m for m in compatible_models if m['status'] == 'partially_compatible']),
-                'incompatible': len(missing_requirements),
-                'average_compatibility_score': sum(m['compatibility_score'] for m in compatible_models) / max(len(compatible_models), 1)
-            }
-        }
-        
-        # Cache the result
-        self._compatibility_cache[dataset_hash] = result
-        return result
-    
-    def _parse_required_features(self, features_data) -> List[str]:
-        """Parse required features from various formats"""
-        if isinstance(features_data, str):
-            try:
-                return eval(features_data)
-            except:
-                return []
-        elif isinstance(features_data, list):
-            return features_data
-        else:
-            return []
-    
-    def _generate_comprehensive_recommendations(self, validation_result: Dict[str, Any],
-                                            selection_analysis: Dict[str, Any],
-                                            dataset_info: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Generate comprehensive, actionable recommendations"""
-        recommendations = []
-        
-        # Data quality recommendations
-        if validation_result.get('errors'):
-            for error in validation_result['errors']:
-                recommendations.append({
-                    'type': 'critical',
-                    'priority': 'high',
-                    'category': 'data_quality',
-                    'message': error,
-                    'action': 'Must be fixed before forecasting',
-                    'impact': 'Prevents forecasting entirely'
-                })
-        
-        if validation_result.get('warnings'):
-            for warning in validation_result['warnings']:
-                recommendations.append({
-                    'type': 'warning',
-                    'priority': 'medium',
-                    'category': 'data_quality',
-                    'message': warning,
-                    'action': 'Consider addressing for better results',
-                    'impact': 'May affect forecast accuracy'
-                })
-        
-        # Model compatibility recommendations
-        analysis = selection_analysis.get('analysis', {})
-        if not analysis.get('can_proceed') and analysis.get('missing_requirements'):
-            for req in analysis['missing_requirements']:
-                if isinstance(req, dict) and 'issues' in req:
-                    for issue in req.get('issues', []):
-                        recommendations.append({
-                            'type': 'requirement',
-                            'priority': 'high' if req.get('compatibility_score', 0) < 50 else 'medium',
-                            'category': 'model_compatibility',
-                            'message': f"{req.get('model_name', 'Unknown model')}: {issue}",
-                            'action': f"Add missing features or choose different model",
-                            'impact': f"Cannot use {req.get('model_name', 'this model')} for forecasting",
-                            'compatibility_score': req.get('compatibility_score', 0)
-                        })
-        
-        # Data collection recommendations
-        row_count = dataset_info.get('row_count', 0)
-        if row_count < 50:
-            recommendations.append({
-                'type': 'suggestion',
-                'priority': 'medium',
-                'category': 'data_volume',
-                'message': f'Limited data ({row_count} points) may affect forecast accuracy',
-                'action': 'Collect more historical data',
-                'impact': 'Improved model performance and reliability'
-            })
-        
-        # Feature engineering recommendations
-        columns = dataset_info.get('columns', [])
-        if 'date' not in columns and dataset_info.get('frequency') != 'none':
-            recommendations.append({
-                'type': 'suggestion',
-                'priority': 'medium',
-                'category': 'feature_engineering',
-                'message': 'Time series data detected but no date column',
-                'action': 'Add a date column for time series forecasting',
-                'impact': 'Enable time series models like Prophet, ARIMA'
-            })
-        
-        return recommendations
-
-    def _generate_detailed_summary(self, validation_result: Dict[str, Any],
-                                 selection_analysis: Dict[str, Any],
-                                 recommendations: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Generate comprehensive analysis summary"""
-        analysis = selection_analysis.get('analysis', {})
-        can_proceed = analysis.get('can_proceed', False)
-        
-        # Count recommendation priorities and categories
-        high_priority = len([r for r in recommendations if r['priority'] == 'high'])
-        medium_priority = len([r for r in recommendations if r['priority'] == 'medium'])
-        
-        categories = {}
-        for rec in recommendations:
-            cat = rec.get('category', 'other')
-            categories[cat] = categories.get(cat, 0) + 1
-        
-        # Generate detailed status message
-        if can_proceed:
-            status_message = f"✅ Ready for forecasting with {selection_analysis['result'].get('selected_model')}"
-            next_steps = [
-                f"Proceed with {selection_analysis['result'].get('selected_model')}",
-                "Review model configuration",
-                "Generate forecast"
-            ]
-        else:
-            rejection_reason = analysis.get('rejection_reason', 'UNKNOWN')
-            if rejection_reason == 'DATA_VALIDATION_FAILED':
-                status_message = "❌ Cannot proceed: Dataset validation failed"
-                next_steps = [
-                    "Address validation errors above",
-                    "Re-upload corrected dataset",
-                    "Re-analyze after fixes"
-                ]
-            elif rejection_reason == 'NO_COMPATIBLE_MODELS':
-                compatible_count = len(analysis.get('compatible_models', []))
-                status_message = f"❌ Cannot proceed: No compatible models found ({compatible_count} models analyzed)"
-                next_steps = [
-                    "Add required features based on recommendations",
-                    "Consider different dataset structure",
-                    "Contact support for model customization"
-                ]
-            else:
-                status_message = "❌ Cannot proceed: Unknown issue"
-                next_steps = ["Contact system administrator"]
-        
-        return {
-            'can_proceed': can_proceed,
-            'status_message': status_message,
-            'confidence': selection_analysis['result'].get('confidence', 0.0),
-            'rejection_reason': analysis.get('rejection_reason'),
-            'compatible_models_count': len(analysis.get('compatible_models', [])),
-            'incompatible_models_count': len(analysis.get('missing_requirements', [])),
-            'recommendation_summary': {
-                'total': len(recommendations),
-                'high_priority': high_priority,
-                'medium_priority': medium_priority,
-                'categories': categories
-            },
-            'next_steps': next_steps
-        }
-
-    def export_analysis_report(self, analysis_result: Dict[str, Any], format: str = 'markdown') -> str:
-        """
-        Export analysis as formatted report
-        """
-        if format == 'markdown':
-            return self._generate_markdown_report(analysis_result)
-        elif format == 'json':
-            return json.dumps(analysis_result, indent=2, ensure_ascii=False)
-        elif format == 'html':
-            return self._generate_html_report(analysis_result)
-        else:
-            raise ValueError(f"Unsupported format: {format}")
-
-    def _generate_markdown_report(self, analysis_result: Dict[str, Any]) -> str:
-        """Generate comprehensive markdown report"""
-        summary = analysis_result.get('summary', {})
-        performance = analysis_result.get('performance_metrics', {})
-        
-        report = [
-            "# Supply Chain Forecasting Analysis Report",
-            "",
-            f"**Generated:** {time.strftime('%Y-%m-%d %H:%M:%S')}",
-            f"**Analysis Time:** {performance.get('analysis_time_seconds', 0):.3f}s",
-            "",
-            f"## 📊 Executive Summary",
-            f"**Status:** {summary.get('status_message', 'Unknown')}",
-            f"**Confidence:** {summary.get('confidence', 0):.1%}",
-            f"**Can Proceed:** {'✅ Yes' if summary.get('can_proceed') else '❌ No'}",
-            "",
-            f"## 🔍 Model Compatibility",
-            f"**Compatible Models:** {summary.get('compatible_models_count', 0)}",
-            f"**Incompatible Models:** {summary.get('incompatible_models_count', 0)}",
-            ""
-        ]
-        
-        # Add selected model information
-        if analysis_result.get('model_selection', {}).get('selected_model'):
-            model_info = analysis_result['model_selection']
-            report.extend([
-                "## 🎯 Selected Model",
-                f"**Model:** {model_info.get('selected_model')}",
-                f"**Reason:** {model_info.get('reason', 'N/A')}",
-                f"**Confidence:** {model_info.get('confidence', 0):.1%}",
-                ""
-            ])
-        
-        # Add recommendations
-        recommendations = analysis_result.get('recommendations', [])
-        if recommendations:
-            report.extend([
-                "## 💡 Recommendations",
-                ""
-            ])
-            
-            high_priority = [r for r in recommendations if r['priority'] == 'high']
-            medium_priority = [r for r in recommendations if r['priority'] == 'medium']
-            
-            if high_priority:
-                report.append("### 🔴 High Priority")
-                for rec in high_priority:
-                    report.extend([
-                        f"#### {rec['message']}",
-                        f"- **Action:** {rec['action']}",
-                        f"- **Impact:** {rec['impact']}",
-                        f"- **Category:** {rec['category']}",
-                        ""
-                    ])
-            
-            if medium_priority:
-                report.append("### 🟡 Medium Priority")
-                for rec in medium_priority:
-                    report.extend([
-                        f"#### {rec['message']}",
-                        f"- **Action:** {rec['action']}",
-                        f"- **Impact:** {rec['impact']}",
-                        f"- **Category:** {rec['category']}",
-                        ""
-                    ])
-        
-        # Add performance metrics
-        if performance:
-            report.extend([
-                "## ⚡ Performance Metrics",
-                f"- **Analysis Time:** {performance.get('analysis_time_seconds', 0):.3f}s",
-                f"- **Models Analyzed:** {performance.get('models_analyzed', 0)}",
-                f"- **Recommendations Generated:** {performance.get('recommendations_generated', 0)}",
-                f"- **Throughput:** {performance.get('throughput_models_per_second', 0):.1f} models/second",
-                f"- **Cached:** {'Yes' if performance.get('cached') else 'No'}",
-                ""
-            ])
-        
-        # Add next steps
-        next_steps = summary.get('next_steps', [])
-        if next_steps:
-            report.extend([
-                "## 👣 Next Steps",
-                ""
-            ])
-            for step in next_steps:
-                report.append(f"- {step}")
-            report.append("")
-        
-        return "\n".join(report)
-
-    def _generate_html_report(self, analysis_result: Dict[str, Any]) -> str:
-        """Generate HTML report (simplified version)"""
-        markdown_report = self._generate_markdown_report(analysis_result)
-        
-        # Simple markdown to HTML conversion
-        html_report = markdown_report.replace('\n## ', '\n<h2>').replace('## ', '<h2>').replace('</h2>', '</h2>')
-        html_report = html_report.replace('\n### ', '\n<h3>').replace('### ', '<h3>').replace('</h3>', '</h3>')
-        html_report = html_report.replace('**', '<strong>').replace('**', '</strong>')
-        html_report = html_report.replace('\n- ', '\n<li>').replace('</li>', '</li>')
-        html_report = html_report.replace('\n', '<br>\n')
-        
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Supply Chain Forecasting Analysis Report</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 40px; }}
-                h1 {{ color: #2c3e50; }}
-                h2 {{ color: #34495e; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; }}
-                .critical {{ color: #e74c3c; }}
-                .warning {{ color: #f39c12; }}
-                .success {{ color: #27ae60; }}
-            </style>
-        </head>
-        <body>
-            {html_report}
-        </body>
-        </html>
-        """
-
-    def clear_cache(self):
-        """Clear all cached data"""
-        self._analysis_cache.clear()
-        self._compatibility_cache.clear()
-        self._model_cache = None
-        logger.info("✅ Cleared all rule engine caches")
-
-    def get_cache_stats(self) -> Dict[str, Any]:
-        """Get cache statistics"""
-        return {
-            'analysis_cache_size': len(self._analysis_cache),
-            'compatibility_cache_size': len(self._compatibility_cache),
-            'model_cache_available': self._model_cache is not None,
-            'total_cached_items': len(self._analysis_cache) + len(self._compatibility_cache) + (1 if self._model_cache else 0)
-        }
-
-
-class MinimalRuleEngine:
-    """
-    Minimal fallback rule engine that works without dependencies
-    """
-    def __init__(self):
+        self.validation_rules = []
+        self.selection_rules = []
         self.rules_loaded = False
-        self._load_rules()
+        
+        # Load YAML rules
+        self._load_validation_rules()
+        self._load_selection_rules()
+        
+        if self.rules_loaded:
+            logger.info(f"✅ RuleEngine initialized with {len(self.validation_rules)} validation rules and {len(self.selection_rules)} selection rules")
+        else:
+            logger.warning("⚠️ RuleEngine initialized but no YAML rules loaded")
     
-    def _load_rules(self):
-        """Try to load rules directly"""
+
+    def _load_validation_rules(self):
+        """Load data validation rules from YAML with better path resolution"""
         try:
-            import yaml
-            # Try multiple possible paths
+            # Get the directory where this script is located
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            
             possible_paths = [
-                'app/knowledge_base/rule_layer/model_selection_rules.yaml',
-                './app/knowledge_base/rule_layer/model_selection_rules.yaml',
-                '../knowledge_base/rule_layer/model_selection_rules.yaml'
+                os.path.join(current_dir, 'data_validation_rules.yaml'),
+                os.path.join(current_dir, '../rule_layer/data_validation_rules.yaml'),
+                os.path.join(project_root, 'app/knowledge_base/rule_layer/data_validation_rules.yaml'),
+                'data_validation_rules.yaml'  # Current directory
             ]
             
             for rules_path in possible_paths:
                 if os.path.exists(rules_path):
                     with open(rules_path, 'r') as f:
-                        self.rules = yaml.safe_load(f)
-                    self.rules_loaded = True
-                    logger.info(f"✅ Minimal engine loaded YAML rules from: {rules_path}")
-                    break
-            else:
-                logger.warning("❌ No YAML rules file found")
-                self.rules = {'rules': []}
-                
+                        rules_data = yaml.safe_load(f)
+                    self.validation_rules = rules_data.get('rules', [])
+                    logger.info(f"✅ Loaded {len(self.validation_rules)} validation rules from: {rules_path}")
+                    return
+            
+            logger.warning("❌ No validation rules YAML file found in searched paths")
+            self.validation_rules = []
+            
         except Exception as e:
-            logger.error(f"❌ Minimal engine failed to load rules: {e}")
-            self.rules = {'rules': []}
+            logger.error(f"❌ Failed to load validation rules: {e}")
+            self.validation_rules = []
+
+    def _load_selection_rules(self):
+        """Load model selection rules from YAML"""
+        try:
+            # Try multiple possible paths
+            possible_paths = [
+                'app/knowledge_base/rule_layer/model_selection_rules.yaml',
+                './app/knowledge_base/rule_layer/model_selection_rules.yaml',
+                'knowledge_base/rule_layer/model_selection_rules.yaml',
+                '../rule_layer/model_selection_rules.yaml'
+            ]
+            
+            for rules_path in possible_paths:
+                if os.path.exists(rules_path):
+                    with open(rules_path, 'r') as f:
+                        rules_data = yaml.safe_load(f)
+                    self.selection_rules = rules_data.get('rules', [])
+                    self.rules_loaded = True
+                    logger.info(f"✅ Loaded {len(self.selection_rules)} selection rules from: {rules_path}")
+                    return
+            
+            logger.warning("❌ No selection rules YAML file found")
+            self.selection_rules = []
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to load selection rules: {e}")
+            self.selection_rules = []
     
-    def validate_dataset(self, dataset_info):
-        """Basic validation"""
+    def validate_dataset(self, dataset_info: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate dataset against validation rules - METADATA ONLY
+        
+        Args:
+            dataset_info: Dictionary containing dataset METADATA (no DataFrame)
+            
+        Returns:
+            Dictionary with validation results
+        """
+        errors = []
+        warnings = []
+        applied_rules = []
+        
+        # Sanitize dataset_info to ensure no DataFrame objects
+        sanitized_info = self._sanitize_dataset_info(dataset_info)
+        
+        # Basic validation if no rules loaded
+        if not self.validation_rules:
+            logger.debug("No validation rules loaded, using basic validation")
+            return self._basic_validation(sanitized_info)
+        
+        # Process each validation rule
+        for rule in self.validation_rules:
+            try:
+                rule_name = rule.get('name', 'unknown')
+                condition = rule.get('condition', '')
+                action = rule.get('action', '').upper()
+                message = rule.get('message', 'Rule triggered')
+                
+                # Evaluate condition
+                if self._evaluate_condition(condition, sanitized_info):
+                    applied_rules.append(rule_name)
+                    
+                    if action == 'REJECT':
+                        errors.append(message)
+                        logger.debug(f"Rule '{rule_name}' REJECTED: {message}")
+                    elif action == 'WARN':
+                        warnings.append(message)
+                        logger.debug(f"Rule '{rule_name}' WARNING: {message}")
+                    elif action == 'ACCEPT':
+                        logger.debug(f"Rule '{rule_name}' ACCEPTED: {message}")
+                    
+            except Exception as e:
+                logger.error(f"Error evaluating validation rule '{rule.get('name', 'unknown')}': {e}")
+                # Add error but don't break the whole validation
+                errors.append(f"Rule evaluation error: {str(e)}")
+        
+        validation_result = {
+            'valid': len(errors) == 0,
+            'errors': errors,
+            'warnings': warnings,
+            'applied_rules': applied_rules
+        }
+        
+        if validation_result['valid']:
+            logger.info(f"✅ Dataset validation passed ({len(applied_rules)} rules applied)")
+        else:
+            logger.warning(f"❌ Dataset validation failed with {len(errors)} errors")
+        
+        return validation_result
+    
+
+
+    def _sanitize_dataset_info(self, dataset_info: Dict[str, Any]) -> Dict[str, Any]:
+        """Remove any non-serializable objects from dataset info"""
+        sanitized = dataset_info.copy()
+        
+        # Remove DataFrame objects and other non-serializable items
+        keys_to_remove = []
+        for key, value in sanitized.items():
+            if hasattr(value, '__class__') and 'DataFrame' in str(value.__class__):
+                keys_to_remove.append(key)
+            elif hasattr(value, 'dtypes'):  # Likely a DataFrame
+                keys_to_remove.append(key)
+        
+        for key in keys_to_remove:
+            if key in sanitized:
+                logger.debug(f"Removing non-serializable key from dataset_info: {key}")
+                del sanitized[key]
+        
+        return sanitized
+    
+    def _basic_validation(self, dataset_info: Dict[str, Any]) -> Dict[str, Any]:
+        """Basic validation when no rules are loaded"""
         errors = []
         warnings = []
         
-        if dataset_info.get('row_count', 0) < 12:
-            errors.append("Insufficient data points (minimum 12 required)")
+        row_count = dataset_info.get('row_count', 0)
+        missing_percentage = dataset_info.get('missing_percentage', 0)
+        columns = dataset_info.get('columns', [])
         
-        if dataset_info.get('missing_percentage', 0) > 0.3:
+        if row_count < 12:
+            errors.append("Insufficient data points (minimum 12 required)")
+        elif row_count < 50:
+            warnings.append("Limited data points may affect model performance")
+        
+        if missing_percentage > 0.3:
             errors.append("Too many missing values (>30%)")
+        elif missing_percentage > 0.1:
+            warnings.append("Moderate missing values may affect accuracy")
+        
+        # Check for required columns
+        if not any(col in columns for col in ['sales', 'demand', 'quantity']):
+            warnings.append("No obvious target variable found (sales, demand, quantity)")
+        
+        if 'date' not in columns:
+            warnings.append("No date column found - time series models may not work")
         
         return {
             'valid': len(errors) == 0,
             'errors': errors,
-            'warnings': warnings
+            'warnings': warnings,
+            'applied_rules': ['basic_validation']
         }
     
-    def select_model(self, dataset_info):
-        """Basic model selection using simple rules"""
+    def select_model(self, dataset_info: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Select appropriate model based on selection rules - METADATA ONLY
+        
+        Args:
+            dataset_info: Dictionary containing dataset METADATA (no DataFrame)
+            
+        Returns:
+            Dictionary with selected model information
+        """
+        # Sanitize dataset_info first
+        sanitized_info = self._sanitize_dataset_info(dataset_info)
+        
+        # If no rules loaded, use fallback logic
+        if not self.selection_rules:
+            return self._fallback_model_selection(sanitized_info)
+        
+        # Process rules by priority (highest first)
+        sorted_rules = sorted(
+            self.selection_rules,
+            key=lambda x: x.get('priority', 0),
+            reverse=True
+        )
+        
+        for rule in sorted_rules:
+            try:
+                rule_name = rule.get('name', 'unknown')
+                condition = rule.get('condition', '')
+                action = rule.get('action', '')
+                message = rule.get('message', 'Rule matched')
+                priority = rule.get('priority', 0)
+                
+                # Evaluate condition
+                if self._evaluate_condition(condition, sanitized_info):
+                    # Extract model name from action
+                    model_name = self._extract_model_name(action)
+                    
+                    if model_name:
+                        logger.info(f"✅ Rule '{rule_name}' matched - selecting {model_name}")
+                        return {
+                            'selected_model': model_name,
+                            'confidence': min(priority / 10.0, 1.0),  # Normalize priority to 0-1
+                            'reason': message,
+                            'rule_name': rule_name,
+                            'model_type': self._infer_model_type(model_name),
+                            'source': 'rule_engine'
+                        }
+                    
+            except Exception as e:
+                logger.error(f"Error evaluating selection rule '{rule.get('name', 'unknown')}': {e}")
+                # Continue to next rule instead of breaking
+        
+        # No rules matched
+        logger.warning("⚠️ No selection rules matched - using fallback")
+        return self._fallback_model_selection(sanitized_info)
+    
+    
+    def _get_available_models(self) -> List[Dict[str, Any]]:
+        """Get available models using actual dataset with RuleEngine selection"""
+        try:
+            # Get all models from knowledge base
+            from app.services.knowledge_base_services.core.knowledge_base_service import SupplyChainService as KnowledgeBaseService
+            kb_service = KnowledgeBaseService("supply_chain.db")
+            all_models = kb_service.get_all_models()
+            kb_service.close()
+            
+            if not all_models:
+                logger.warning("No models found in knowledge base")
+                return []  # Return empty list - let calling function handle fallback
+            
+            # Filter to active models only
+            active_models = [model for model in all_models if model.get('is_active', True)]
+            
+            if not active_models:
+                logger.warning("No active models found")
+                return []
+            
+            # We'll let the calling function provide the actual dataset context
+            # This method just returns all active models for evaluation
+            logger.info(f"📊 Found {len(active_models)} active models for evaluation")
+            return active_models
+            
+        except Exception as e:
+            logger.error(f"❌ Error getting available models: {e}")
+            return []  # Empty list - let calling function handle fallback
+    
+    
+    def _evaluate_condition(self, condition: str, dataset_info: Dict[str, Any]) -> bool:
+        """
+        Safely evaluate a rule condition - METADATA ONLY
+        
+        Args:
+            condition: Python expression as string
+            dataset_info: Dataset METADATA dictionary (no DataFrame)
+            
+        Returns:
+            Boolean result of condition evaluation
+        """
+        if not condition:
+            return False
+        
+        try:
+            # Create a safe evaluation context
+            # Replace 'dataset.' with 'dataset_info.get('
+            safe_condition = condition.replace('dataset.', "dataset_info.get('")
+            
+            # Handle common patterns for metadata access
+            safe_condition = safe_condition.replace("'columns'", "', [])")  # dataset.columns -> dataset_info.get('columns', [])
+            safe_condition = safe_condition.replace("'row_count'", "', 0)")  # dataset.row_count -> dataset_info.get('row_count', 0)
+            safe_condition = safe_condition.replace("'frequency'", "', '')")  # dataset.frequency -> dataset_info.get('frequency', '')
+            safe_condition = safe_condition.replace("'granularity'", "', '')")  # dataset.granularity -> dataset_info.get('granularity', '')
+            safe_condition = safe_condition.replace("'missing_percentage'", "', 0)")  # dataset.missing_percentage -> dataset_info.get('missing_percentage', 0)
+            safe_condition = safe_condition.replace("'name'", "', '')")  # dataset.name -> dataset_info.get('name', '')
+            
+            # For any remaining patterns like dataset.some_attribute
+            import re
+            safe_condition = re.sub(
+                r"dataset_info\.get\('(\w+)'(?!\))",
+                r"dataset_info.get('\1', None)",
+                safe_condition
+            )
+            
+            # Add closing parentheses for get calls
+            safe_condition = re.sub(
+                r"dataset_info\.get\('[^']+'(?![)])",
+                lambda m: m.group(0) + ")",
+                safe_condition
+            )
+            
+            # Safe evaluation with restricted namespace
+            safe_builtins = {
+                'any': any, 
+                'all': all, 
+                'len': len,
+                'str': str,
+                'int': int,
+                'float': float,
+                'bool': bool,
+                'list': list,
+                'dict': dict,
+                'min': min,
+                'max': max,
+                'sum': sum
+            }
+            
+            result = eval(safe_condition, {"__builtins__": safe_builtins}, {"dataset_info": dataset_info})
+            return bool(result)
+            
+        except Exception as e:
+            logger.debug(f"Condition evaluation failed: '{condition}' - Error: {e}")
+            return False
+    
+
+    def _extract_model_name(self, action: str) -> Optional[str]:
+        """Extract model name from action string - IMPROVED VERSION"""
+        import re
+        
+        if not action:
+            return None
+            
+        # Common patterns in order of specificity
+        patterns = [
+            r"model_name\s*=\s*['\"]([A-Za-z0-9_]+)['\"]",  # model_name = 'ModelName'
+            r"model_name\s*=\s*([A-Za-z0-9_]+)\b",           # model_name = ModelName
+            r"SELECT.*WHERE.*model_name\s*=\s*['\"]([A-Za-z0-9_]+)['\"]",  # SQL pattern
+            r"['\"]([A-Z][A-Za-z0-9_]+Forecaster)['\"]",     # 'MonthlyShopForecaster'
+            r"['\"]([A-Z][A-Za-z0-9_]+Model)['\"]",          # 'TestAutoModel'
+            r"\b([A-Z][A-Za-z0-9_]+Forecaster)\b",           # MonthlyShopForecaster
+            r"\b([A-Z][A-Za-z0-9_]+Model)\b",                # TestAutoModel
+            r"\b(Prophet|ARIMA|XGBoost|LightGBM|TFT)\b"      # Common model names
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, action, re.IGNORECASE)
+            if match:
+                model_name = match.group(1)
+                logger.debug(f"Extracted model name '{model_name}' from action: {action}")
+                return model_name
+        
+        logger.warning(f"Could not extract model name from action: {action}")
+        return None
+
+
+    def _infer_model_type(self, model_name: str) -> str:
+        """Infer model type from model name"""
+        if not model_name:
+            return 'unknown'
+            
+        name_lower = model_name.lower()
+        
+        if 'prophet' in name_lower:
+            return 'time_series'
+        elif 'arima' in name_lower:
+            return 'time_series'
+        elif 'lightgbm' in name_lower or 'lgb' in name_lower:
+            return 'ensemble'
+        elif 'xgboost' in name_lower or 'xgb' in name_lower:
+            return 'ensemble'
+        elif 'tft' in name_lower or 'temporal' in name_lower:
+            return 'time_series'
+        elif 'lstm' in name_lower or 'rnn' in name_lower:
+            return 'neural_network'
+        elif 'auto' in name_lower:
+            return 'auto_ml'
+        elif 'forecaster' in name_lower:
+            return 'ensemble'
+        else:
+            return 'unknown'
+    
+    def _fallback_model_selection(self, dataset_info: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Fallback model selection logic when no rules match - METADATA ONLY
+        """
         columns = dataset_info.get('columns', [])
         frequency = dataset_info.get('frequency', '')
         row_count = dataset_info.get('row_count', 0)
+        granularity = dataset_info.get('granularity', '')
         
-        # Simple rule-based selection
-        if self.rules_loaded and self.rules.get('rules'):
-            # Try to use YAML rules if available
-            for rule in self.rules['rules']:
-                if self._evaluate_simple_condition(rule.get('condition', ''), dataset_info):
-                    model_name = self._extract_model_name(rule.get('action', ''))
-                    if model_name:
-                        return {
-                            'selected_model': model_name,
-                            'confidence': rule.get('priority', 5) / 10.0,
-                            'reason': rule.get('message', 'Rule matched')
-                        }
-        
-        # Fallback to simple logic
-        if frequency == 'monthly' and 'shop_id' in columns and row_count >= 12:
+        # Simple heuristic-based selection
+        if frequency == 'monthly' and any(col in columns for col in ['shop_id', 'store_id']) and row_count >= 12:
             return {
                 'selected_model': 'Monthly_Shop_Sales_Forecaster',
-                'confidence': 0.8,
-                'reason': 'Monthly shop data detected'
+                'confidence': 0.7,
+                'reason': 'Fallback: Monthly shop data detected',
+                'rule_name': 'fallback_monthly_shop',
+                'model_type': 'ensemble',
+                'source': 'fallback_logic'
             }
-        elif frequency == 'daily' and 'shop_id' in columns and row_count >= 30:
+        elif frequency == 'daily' and any(col in columns for col in ['shop_id', 'store_id']) and row_count >= 30:
             return {
-                'selected_model': 'Daily_Shop_Sales_Forecaster', 
-                'confidence': 0.8,
-                'reason': 'Daily shop data detected'
+                'selected_model': 'Daily_Shop_Sales_Forecaster',
+                'confidence': 0.7,
+                'reason': 'Fallback: Daily shop data detected',
+                'rule_name': 'fallback_daily_shop',
+                'model_type': 'ensemble',
+                'source': 'fallback_logic'
             }
-        elif 'date' in columns and ('demand' in columns or 'sales' in columns) and row_count >= 50:
+        elif frequency == 'daily' and row_count >= 50:
             return {
                 'selected_model': 'Prophet',
-                'confidence': 0.7,
-                'reason': 'Time series data detected'
+                'confidence': 0.6,
+                'reason': 'Fallback: Daily time series data detected',
+                'rule_name': 'fallback_daily_ts',
+                'model_type': 'time_series',
+                'source': 'fallback_logic'
             }
-        
+        elif 'date' in columns and any(col in columns for col in ['demand', 'sales', 'quantity']) and row_count >= 30:
+            return {
+                'selected_model': 'Prophet',
+                'confidence': 0.6,
+                'reason': 'Fallback: Time series data with target detected',
+                'rule_name': 'fallback_time_series',
+                'model_type': 'time_series',
+                'source': 'fallback_logic'
+            }
+        else:
+            return {
+                'selected_model': None,
+                'confidence': 0.0,
+                'reason': 'No suitable model found with available metadata',
+                'rule_name': 'no_match',
+                'model_type': None,
+                'source': 'fallback_logic'
+            }
+    
+    def get_rule_statistics(self) -> Dict[str, Any]:
+        """Get statistics about loaded rules"""
         return {
-            'selected_model': None,
-            'confidence': 0.0,
-            'reason': 'No matching model found'
+            'validation_rules_count': len(self.validation_rules),
+            'selection_rules_count': len(self.selection_rules),
+            'rules_loaded': self.rules_loaded,
+            'validation_rule_types': self._count_rule_types(self.validation_rules),
+            'selection_rule_priorities': self._count_priorities(self.selection_rules)
         }
     
-    def _evaluate_simple_condition(self, condition: str, dataset_info: Dict[str, Any]) -> bool:
-        """Simple condition evaluator"""
-        if not condition:
-            return False
-            
-        try:
-            # Replace common patterns
-            condition = condition.replace('dataset.', 'dataset_info.get(')
-            condition = condition.replace(' in dataset.columns', " in dataset_info.get('columns', [])")
-            
-            # Add closing parentheses
-            import re
-            condition = re.sub(r'dataset_info\.get\((\w+)(?=[),])', r"dataset_info.get('\1', None)", condition)
-            
-            # Safe evaluation
-            result = eval(condition, {'dataset_info': dataset_info})
-            return bool(result)
-        except Exception as e:
-            logger.debug(f"Condition evaluation failed: {e}")
-            return False
+    def test_rules_with_dataset(self, dataset_info: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Test all rules against a dataset and see which ones fire
+        Excellent for debugging and rule development
+        """
+        sanitized_info = self._sanitize_dataset_info(dataset_info)
+        
+        results = {
+            'validation_rules_fired': [],
+            'selection_rules_fired': [],
+            'validation_result': None,
+            'selection_result': None
+        }
+        
+        # Test validation rules
+        for rule in self.validation_rules:
+            try:
+                condition = rule.get('condition', '')
+                if self._evaluate_condition(condition, sanitized_info):
+                    results['validation_rules_fired'].append({
+                        'name': rule.get('name'),
+                        'action': rule.get('action'),
+                        'message': rule.get('message'),
+                        'priority': rule.get('priority')
+                    })
+            except Exception as e:
+                logger.error(f"Error testing validation rule {rule.get('name')}: {e}")
+        
+        # Test selection rules  
+        for rule in self.selection_rules:
+            try:
+                condition = rule.get('condition', '')
+                if self._evaluate_condition(condition, sanitized_info):
+                    results['selection_rules_fired'].append({
+                        'name': rule.get('name'),
+                        'action': rule.get('action'),
+                        'message': rule.get('message'),
+                        'priority': rule.get('priority')
+                    })
+            except Exception as e:
+                logger.error(f"Error testing selection rule {rule.get('name')}: {e}")
+        
+        # Get actual results
+        results['validation_result'] = self.validate_dataset(dataset_info)
+        results['selection_result'] = self.select_model(dataset_info)
+        
+        return results
+
+    def _count_rule_types(self, rules: List[Dict]) -> Dict[str, int]:
+        """Count rules by type"""
+        types = {}
+        for rule in rules:
+            action = rule.get('action', 'unknown').upper()
+            types[action] = types.get(action, 0) + 1
+        return types
     
-    def _extract_model_name(self, action: str) -> str:
-        """Extract model name from action string"""
-        if "model_name =" in action:
-            import re
-            match = re.search(r"model_name\s*=\s*['\"]([^'\"]+)['\"]", action)
-            if match:
-                return match.group(1)
-        return ""
+    def _count_priorities(self, rules: List[Dict]) -> Dict[int, int]:
+        """Count rules by priority"""
+        priorities = {}
+        for rule in rules:
+            priority = rule.get('priority', 0)
+            priorities[priority] = priorities.get(priority, 0) + 1
+        return priorities
+    
+    def test_condition_evaluation(self, condition: str, dataset_info: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Test a condition with dataset info for debugging
+        """
+        try:
+            result = self._evaluate_condition(condition, dataset_info)
+            return {
+                'success': True,
+                'result': result,
+                'condition': condition,
+                'dataset_keys': list(dataset_info.keys())
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e),
+                'condition': condition,
+                'dataset_keys': list(dataset_info.keys())
+            }
 
 
-def demo_enhanced_rule_engine():
-    """Test the enhanced rule engine with all new features"""
-    print("🚀 ENHANCED RULE ENGINE WITH CACHING & EXPORT CAPABILITIES")
+def demo_rule_engine():
+    """Demo the base RuleEngine"""
+    print("🚀 BASE RULE ENGINE DEMO")
     print("=" * 60)
     
-    service = RuleEngineService()
+    # Initialize engine
+    engine = RuleEngine()
     
-    # Test different scenarios
-    test_scenarios = [
-        {
-            'name': '✅ Compatible Dataset',
-            'dataset': {
-                'name': 'compatible_shop_data',
-                'frequency': 'monthly',
-                'granularity': 'shop_level',
-                'row_count': 48,
-                'columns': ['shop_id', 'date', 'sales'],
-                'missing_percentage': 0.02
-            }
-        },
-        {
-            'name': '❌ Missing Target Variable',
-            'dataset': {
-                'name': 'no_target_data',
-                'frequency': 'monthly',
-                'granularity': 'shop_level',
-                'row_count': 48,
-                'columns': ['shop_id', 'date', 'price'],  # Missing sales/demand
-                'missing_percentage': 0.02
-            }
-        }
+    # Show statistics
+    stats = engine.get_rule_statistics()
+    print(f"\n📊 RULE STATISTICS:")
+    print(f"   Validation Rules: {stats['validation_rules_count']}")
+    print(f"   Selection Rules: {stats['selection_rules_count']}")
+    print(f"   Rules Loaded: {stats['rules_loaded']}")
+    
+    # Test validation
+    print(f"\n✅ VALIDATION TEST:")
+    test_dataset = {
+        'name': 'test_data',
+        'frequency': 'monthly',
+        'row_count': 48,
+        'columns': ['shop_id', 'date', 'sales'],
+        'missing_percentage': 0.02,
+        'granularity': 'shop_level'
+    }
+    
+    validation_result = engine.validate_dataset(test_dataset)
+    print(f"   Valid: {validation_result['valid']}")
+    print(f"   Errors: {len(validation_result['errors'])}")
+    if validation_result['errors']:
+        for error in validation_result['errors']:
+            print(f"     - {error}")
+    print(f"   Warnings: {len(validation_result['warnings'])}")
+    if validation_result['warnings']:
+        for warning in validation_result['warnings']:
+            print(f"     - {warning}")
+    print(f"   Rules Applied: {len(validation_result['applied_rules'])}")
+    
+    # Test model selection
+    print(f"\n🎯 MODEL SELECTION TEST:")
+    selection_result = engine.select_model(test_dataset)
+    print(f"   Selected Model: {selection_result['selected_model']}")
+    print(f"   Confidence: {selection_result['confidence']:.1%}")
+    print(f"   Reason: {selection_result['reason']}")
+    print(f"   Rule: {selection_result['rule_name']}")
+    print(f"   Model Type: {selection_result['model_type']}")
+    print(f"   Source: {selection_result['source']}")
+    
+    # Test condition evaluation
+    print(f"\n🧪 CONDITION EVALUATION TEST:")
+    test_conditions = [
+        "dataset.row_count > 10",
+        "'sales' in dataset.columns",
+        "dataset.frequency == 'monthly'"
     ]
     
-    for scenario in test_scenarios:
-        print(f"\n{'='*50}")
-        print(f"SCENARIO: {scenario['name']}")
-        print(f"{'='*50}")
-        
-        # First analysis (uncached)
-        print("📊 First Analysis (Uncached):")
-        start_time = time.time()
-        result = service.analyze_dataset(scenario['dataset'])
-        first_analysis_time = time.time() - start_time
-        
-        # Second analysis (cached)
-        print("📊 Second Analysis (Cached):")
-        start_time = time.time()
-        cached_result = service.analyze_dataset(scenario['dataset'])
-        cached_analysis_time = time.time() - start_time
-        
-        summary = result['summary']
-        performance = result.get('performance_metrics', {})
-        
-        print(f"\n📋 SUMMARY: {summary['status_message']}")
-        print(f"🎯 Confidence: {summary['confidence']:.1%}")
-        print(f"⏱️ Performance: {first_analysis_time:.3f}s (uncached) vs {cached_analysis_time:.3f}s (cached)")
-        print(f"📈 Speed Improvement: {first_analysis_time/max(cached_analysis_time, 0.001):.1f}x faster")
-        
-        if not summary['can_proceed']:
-            print(f"🚫 Rejection Reason: {summary['rejection_reason']}")
-        
-        # Show compatibility analysis
-        compatibility = result['selection_analysis']['analysis'].get('compatibility_summary', {})
-        if compatibility:
-            print(f"🔍 Compatibility: {compatibility.get('fully_compatible', 0)} fully, {compatibility.get('partially_compatible', 0)} partially compatible")
-            print(f"📊 Average Score: {compatibility.get('average_compatibility_score', 0):.1f}%")
-        
-        # Test export functionality
-        print(f"\n📄 EXPORT TEST:")
-        markdown_report = service.export_analysis_report(result, 'markdown')
-        print(f"📝 Markdown Report: {len(markdown_report)} characters")
-        
-        json_report = service.export_analysis_report(result, 'json')
-        print(f"📊 JSON Report: {len(json_report)} characters")
-        
-        html_report = service.export_analysis_report(result, 'html')
-        print(f"🌐 HTML Report: {len(html_report)} characters")
+    for condition in test_conditions:
+        test_result = engine.test_condition_evaluation(condition, test_dataset)
+        print(f"   Condition: '{condition}'")
+        print(f"     Success: {test_result['success']}")
+        if test_result['success']:
+            print(f"     Result: {test_result['result']}")
+        else:
+            print(f"     Error: {test_result['error']}")
     
-    # Show cache statistics
-    cache_stats = service.get_cache_stats()
-    print(f"\n💾 CACHE STATISTICS:")
-    print(f"   Analysis Cache: {cache_stats['analysis_cache_size']} items")
-    print(f"   Compatibility Cache: {cache_stats['compatibility_cache_size']} items")
-    print(f"   Total Cached: {cache_stats['total_cached_items']} items")
-    
-    # Clear cache and show stats again
-    service.clear_cache()
-    cache_stats_after = service.get_cache_stats()
-    print(f"   After Clear: {cache_stats_after['total_cached_items']} items")
-    
-    print("\n🎉 ENHANCED DEMO COMPLETED SUCCESSFULLY!")
+    print("\n🎉 BASE RULE ENGINE DEMO COMPLETED!")
 
 
 if __name__ == "__main__":
-    demo_enhanced_rule_engine()
+    demo_rule_engine()

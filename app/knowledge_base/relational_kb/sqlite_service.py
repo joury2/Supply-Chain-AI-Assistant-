@@ -6,7 +6,7 @@ SQLiteService - The Master Orchestrator for Supply Chain Forecasting Knowledge B
 This service combines:
 - SQLiteManager (Database operations)
 - SQLiteRepository (Data access layer) 
-- RuleEngine (Business logic)
+- RuleEngineService (Business logic)
 - Knowledge Base Services
 Into a cohesive business logic layer that makes intelligent decisions.
 """
@@ -39,7 +39,7 @@ class SQLiteService:
         try:
             from app.knowledge_base.relational_kb.sqlite_manager import SQLiteManager
             from app.knowledge_base.relational_kb.sqlite_schema import SQLiteRepository
-            from app.knowledge_base.rule_layer.rule_engine import RuleEngineService
+            from app.services.knowledge_base_services.core.rule_engine_service import RuleEngineService
             
             # Core database components
             # for managing SQLite connections and CRUD operations
@@ -48,7 +48,7 @@ class SQLiteService:
             
             # Business logic engine
             # for rule-based validations and model selections
-            self.rule_engine = RuleEngineService(self.db_manager.conn)
+            self.rule_engine_service = RuleEngineService(self.db_manager.conn)
             
             # Service integrations (with fallbacks)
             # to connect with external knowledge base services

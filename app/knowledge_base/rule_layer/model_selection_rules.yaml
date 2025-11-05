@@ -2,85 +2,80 @@
 description: Simplified model selection rules that work with actual dataset structure
 rules:
   # High-priority retail-specific rules
-  - action: SELECT model_id FROM ML_Models WHERE model_name = 'Monthly_Shop_Sales_Forecaster'
-    condition: dataset.get('frequency') == 'monthly' and 'shop_id' in dataset.get('columns', []) and dataset.get('granularity') == 'shop_level' and dataset.get('row_count', 0) >= 12
+  - action: "model_name = 'Monthly_Shop_Sales_Forecaster'"
+    condition: "dataset.get('frequency') == 'monthly' and 'shop_id' in dataset.get('columns', []) and dataset.get('granularity') == 'shop_level' and dataset.get('row_count', 0) >= 12"
     description: Select LightGBM monthly sales forecaster for shop-level monthly data
     message: LightGBM monthly forecaster selected - optimized for monthly shop sales
     name: monthly_lightgbm_forecasting
     priority: 10
     
-  - action: SELECT model_id FROM ML_Models WHERE model_name = 'Daily_Shop_Sales_Forecaster'
-    condition: dataset.get('frequency') == 'daily' and 'shop_id' in dataset.get('columns', []) and dataset.get('granularity') == 'shop_level' and dataset.get('row_count', 0) >= 30
+  - action: "model_name = 'Daily_Shop_Sales_Forecaster'"
+    condition: "dataset.get('frequency') == 'daily' and 'shop_id' in dataset.get('columns', []) and dataset.get('granularity') == 'shop_level' and dataset.get('row_count', 0) >= 30"
     description: Select LightGBM daily sales forecaster for shop-level daily data
     message: LightGBM daily forecaster selected - optimized for daily shop sales
     name: daily_lightgbm_forecasting
     priority: 10
 
-  # Performance-based selection (NEW IMPROVEMENT)
-  - action: |
-      SELECT model_id FROM ML_Models 
-      WHERE model_type = 'time_series' 
-      AND is_active = TRUE 
-      ORDER BY json_extract(performance_metrics, '$.MAPE') ASC 
-      LIMIT 1
-    condition: dataset.get('frequency') in ['daily', 'weekly', 'monthly'] and dataset.get('row_count', 0) >= 100
+  # Performance-based selection
+  - action: "model_name = 'Prophet'"
+    condition: "dataset.get('frequency') in ['daily', 'weekly', 'monthly'] and dataset.get('row_count', 0) >= 100"
     description: Select best performing time series model for quality data
-    message: Best performing time series model selected based on historical MAPE
+    message: Prophet selected - reliable for time series forecasting with good data quality
     name: performance_based_selection
     priority: 9
 
   # Test Auto Model rules (retail focused)
-  - action: SELECT model_id FROM ML_Models WHERE model_name = 'Test_Auto_Model'
-    condition: ('shop_id' in dataset.columns or 'store_id' in dataset.columns) and dataset.granularity in ['shop_level', 'store_level']
+  - action: "model_name = 'Test_Auto_Model'"
+    condition: "('shop_id' in dataset.get('columns', []) or 'store_id' in dataset.get('columns', [])) and dataset.get('granularity') in ['shop_level', 'store_level']"
     description: Select Test_Auto_Model for retail data
     message: Test_Auto_Model selected - optimized for retail forecasting
     name: test_auto_model_retail_data
     priority: 9
     
-  - action: SELECT model_id FROM ML_Models WHERE model_name = 'Test_Auto_Model'
-    condition: dataset.frequency == 'monthly' and ('shop_id' in dataset.columns or 'store_id' in dataset.columns)
+  - action: "model_name = 'Test_Auto_Model'"
+    condition: "dataset.get('frequency') == 'monthly' and ('shop_id' in dataset.get('columns', []) or 'store_id' in dataset.get('columns', []))"
     description: Select Test_Auto_Model for monthly retail data
     message: Test_Auto_Model selected - ideal for monthly retail data
     name: test_auto_model_monthly_retail
     priority: 9
 
   # Feature-rich dataset rules
-  - action: SELECT model_id FROM ML_Models WHERE model_name = 'XGBoost'
-    condition: len(dataset.get('columns', [])) >= 5 and dataset.get('row_count', 0) >= 100
+  - action: "model_name = 'XGBoost'"
+    condition: "len(dataset.get('columns', [])) >= 5 and dataset.get('row_count', 0) >= 100"
     description: Select XGBoost when you have rich feature sets
     message: XGBoost selected - excellent for feature-rich data
     name: xgboost_feature_rich
     priority: 8
 
-  # Consolidated Prophet rules (IMPROVEMENT APPLIED)
-  - action: SELECT model_id FROM ML_Models WHERE model_name = 'Prophet'
-    condition: dataset.get('frequency') in ['daily', 'weekly', 'monthly'] and dataset.get('row_count', 0) >= 30
+  # Prophet rules for time series
+  - action: "model_name = 'Prophet'"
+    condition: "dataset.get('frequency') in ['daily', 'weekly', 'monthly'] and dataset.get('row_count', 0) >= 30"
     description: Select Prophet for time series data with sufficient history
     message: Prophet selected - reliable for time series forecasting
     name: prophet_time_series
     priority: 7
 
-  # Special case: Prophet for missing data
-  - action: SELECT model_id FROM ML_Models WHERE model_name = 'Prophet'
-    condition: dataset.get('missing_percentage', 0) > 0.1 and dataset.get('frequency') in ['daily', 'weekly', 'monthly']
+  # Prophet for missing data
+  - action: "model_name = 'Prophet'"
+    condition: "dataset.get('missing_percentage', 0) > 0.1 and dataset.get('frequency') in ['daily', 'weekly', 'monthly']"
     description: Select Prophet for data with missing values
     message: Prophet selected - handles missing data well
     name: prophet_missing_data
     priority: 6
 
   # Fallback rules
-  - action: SELECT model_id FROM ML_Models WHERE model_name = 'Test_Auto_Model'
-    condition: dataset.row_count >= 20 and len(dataset.columns) >= 2
+  - action: "model_name = 'Test_Auto_Model'"
+    condition: "dataset.get('row_count', 0) >= 20 and len(dataset.get('columns', [])) >= 2"
     description: Select Test_Auto_Model as fallback option
     message: Test_Auto_Model selected as fallback option
     name: test_auto_model_fallback
     priority: 3
     
-  - action: SELECT model_id FROM ML_Models WHERE is_active = TRUE LIMIT 1
-    condition: dataset.get('row_count', 0) >= 20
-    description: Any available model as last resort
-    message: Selected first available model as fallback
-    name: fallback_any_model
+  - action: "model_name = 'Prophet'"
+    condition: "dataset.get('row_count', 0) >= 20"
+    description: Prophet as last resort
+    message: Prophet selected as reliable fallback option
+    name: fallback_prophet
     priority: 1
 
 version: '2.1'

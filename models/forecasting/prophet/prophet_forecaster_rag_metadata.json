@@ -1,0 +1,142 @@
+{
+  "model_identity": {
+    "id": "supply_chain_prophet_forecaster_20251101_192259",
+    "name": "Supply_Chain_Prophet_Forecaster",
+    "type": "prophet_time_series",
+    "domain": "supply_chain_forecasting",
+    "forecasting_frequency": "daily",
+    "created_at": "20251101_192259",
+    "framework": "facebook_prophet"
+  },
+  "use_case_profile": {
+    "forecasting_type": "daily_order_volume",
+    "granularity": "daily_aggregate",
+    "horizon": "multi_day",
+    "target_entity": "total_daily_orders",
+    "best_for": [
+      "daily_demand_forecasting",
+      "inventory_planning",
+      "capacity_planning",
+      "workforce_scheduling",
+      "delivery_planning",
+      "seasonal_pattern_analysis",
+      "trend_analysis",
+      "holiday_effect_modeling"
+    ],
+    "not_recommended_for": [
+      "item_level_forecasting",
+      "real_time_forecasting",
+      "high_frequency_data",
+      "non_time_series_data"
+    ]
+  },
+  "performance_profile": {
+    "accuracy_metrics": {
+      "r2_score": 0.9800371554939371,
+      "rmse": 110.51515415151476,
+      "mape": 7.637900982433783,
+      "mae": 86.21975638608245,
+      "confidence_level": "high"
+    },
+    "training_quality": {
+      "seasonality_captured": [
+        "yearly",
+        "weekly_custom",
+        "trend"
+      ],
+      "regressor_inclusion": [
+        "weekend_effects",
+        "business_metrics"
+      ],
+      "convergence_status": "fully_trained"
+    }
+  },
+  "technical_specifications": {
+    "input_requirements": {
+      "required_columns": [
+        "ds",
+        "y"
+      ],
+      "required_regressors": [
+        "is_saturday",
+        "is_sunday"
+      ],
+      "optional_regressors": [
+        "unique_customers",
+        "avg_revenue"
+      ],
+      "minimum_history": "180_days",
+      "data_frequency": "daily"
+    },
+    "feature_dependencies": {
+      "critical_features": [
+        "ds",
+        "y",
+        "is_saturday",
+        "is_sunday"
+      ],
+      "temporal_features": [
+        "ds"
+      ],
+      "business_regressors": [
+        "unique_customers",
+        "avg_revenue"
+      ],
+      "weekend_indicators": [
+        "is_saturday",
+        "is_sunday"
+      ],
+      "seasonal_components": [
+        "yearly",
+        "trend"
+      ]
+    },
+    "compatibility": {
+      "data_patterns": "seasonal_trends",
+      "outlier_handling": "robust",
+      "holiday_effects": "supported"
+    }
+  },
+  "operational_profile": {
+    "inference_speed": "medium",
+    "resource_requirements": "medium",
+    "update_frequency": "monthly_retraining",
+    "stability": "high",
+    "interpretability": "high"
+  },
+  "business_value": {
+    "typical_accuracy": "98.0% variance explained",
+    "error_magnitude": "±110.5 units daily",
+    "forecast_horizon": "30_days",
+    "suitable_business_cases": [
+      "daily_order_planning",
+      "inventory_optimization",
+      "delivery_resource_allocation",
+      "workforce_scheduling",
+      "seasonal_demand_preparation"
+    ]
+  },
+  "prophet_configuration": {
+    "seasonalities": {
+      "daily": false,
+      "weekly": false,
+      "yearly": true,
+      "monthly": "not_configured"
+    },
+    "custom_regressors": {
+      "weekend_effects": [
+        "saturday",
+        "sunday"
+      ],
+      "business_metrics": [
+        "customer_count",
+        "revenue"
+      ]
+    },
+    "model_parameters": {
+      "changepoint_prior_scale": 0.05,
+      "seasonality_prior_scale": 10.0,
+      "holidays_prior_scale": 10.0
+    }
+  }
+}

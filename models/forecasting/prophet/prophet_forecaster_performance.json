@@ -1,0 +1,24 @@
+{
+  "training_info": {
+    "training_samples": 1957,
+    "validation_samples": 30,
+    "total_training_days": "1976 days",
+    "model_type": "Prophet with custom regressors"
+  },
+  "validation_metrics": {
+    "r2": 0.9800371554939371,
+    "rmse": 110.51515415151476,
+    "mape": 7.637900982433783,
+    "mae": 86.21975638608245
+  },
+  "cross_validation_info": {
+    "method": "time_series_split",
+    "validation_period": "30_days",
+    "data_leak_prevention": "strict_chronological_split"
+  },
+  "business_interpretation": {
+    "accuracy_level": "excellent",
+    "error_magnitude": "low",
+    "reliability": "high"
+  }
+}
