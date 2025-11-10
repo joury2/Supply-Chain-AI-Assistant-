@@ -1,0 +1,4 @@
+4|Daily_Shop_Sales_Forecaster|individual_shops|
+5|Monthly_Shop_Sales_Forecaster|individual_shops|
+6|Supply_Chain_Prophet_Forecaster|total_daily_orders|
+7|LSTM Daily TotalRevenue Forecaster|daily_demand|

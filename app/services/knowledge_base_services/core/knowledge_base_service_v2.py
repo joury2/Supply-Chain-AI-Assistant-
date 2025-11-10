@@ -1,9 +1,13 @@
-# app/services/knowledge_base_services/core/knowledge_base_service.py
-
+# app/services/knowledge_base_services/core/knowledge_base_service_v2.py
 """
-KNOWLEDGE BASE SERVICE - DATA ACCESS LAYER
-Role: Thread-safe database access for ML models, schemas, and rules
-Job: Provide CRUD operations for knowledge base entities
+THREAD-SAFE Knowledge Base Service for Supply Chain Forecasting
+FIXED VERSION: Uses thread-safe database connections for Streamlit compatibility
+
+Key Changes:
+1. Uses ThreadSafeDB instead of direct SQLite connections
+2. Implements proper connection pooling per thread
+3. Maintains same interface as original service
+4. Adds comprehensive error handling
 """
 
 import json
@@ -13,36 +17,41 @@ from datetime import datetime
 import hashlib
 from app.repositories.model_repository import get_model_repository
 
+
+# Configure logging
 logger = logging.getLogger(__name__)
 
 class SupplyChainService:
     """
-    📊 DATA ACCESS LAYER - Thread-safe knowledge base operations
+    THREAD-SAFE knowledge base service for supply chain forecasting operations.
     
-    PRIMARY JOB:
-    - Retrieve ML model metadata from database
-    - Validate datasets against schemas
-    - Access business rules and configurations
-    - Manage dataset schema definitions
+    Why this fix is needed:
+    - Streamlit runs each session in separate threads
+    - SQLite connections cannot be shared between threads
+    - Original service caused: "SQLite objects created in a thread can only be used in that same thread"
     
-    DOES NOT:
-    - Execute models (that's ModelInferenceService)
-    - Make business decisions (that's SupplyChainForecastingService)
-    - Process data (that's ForecastDataPreprocessor)
+    Solution: Use ThreadSafeDB which creates separate connections per thread
     """
     
+    
     def __init__(self, db_path: str = "supply_chain.db"):
-        """Initialize thread-safe database connection"""
+        """Initialize with thread-safe database connection"""
         try:
+            # Import thread-safe database manager
             from app.services.knowledge_base_services.core.thread_safe_db import get_thread_safe_db
             
+            # Get thread-safe database instance
             self.db = get_thread_safe_db(db_path)
+            
+            # Initialize caches
             self._model_cache = None
             self._schema_cache = {}
             self._rules_cache = None
+
+            # Use repository
             self.repository = get_model_repository(db_path)
 
-            logger.info(f"✅ Knowledge Base Service initialized: {db_path}")
+            logger.info(f"✅ Thread-safe Knowledge Base Service initialized: {db_path}")
             
         except ImportError as e:
             logger.error(f"❌ Failed to import thread-safe DB: {e}")
@@ -51,25 +60,99 @@ class SupplyChainService:
             logger.error(f"❌ Service initialization failed: {e}")
             raise
 
-    # ============================================================================
-    # MODEL OPERATIONS - Single Version
-    # ============================================================================
-
-    def get_all_models(self, use_cache: bool = True) -> List[Dict[str, Any]]:
-        """
-        Get all active ML models from database
+    def _generate_cache_key(self, data: Dict[str, Any]) -> str:
+        """Generate cache key from data dictionary"""
+        # Remove non-serializable items
+        clean_data = {}
+        for key, value in data.items():
+            if key in ['data', 'df', 'dataframe']:
+                continue
+            if isinstance(value, (str, int, float, bool, type(None))):
+                clean_data[key] = value
+            elif isinstance(value, (list, tuple)):
+                try:
+                    clean_data[key] = str(value)
+                except:
+                    continue
+            elif isinstance(value, dict):
+                try:
+                    clean_data[key] = str(sorted(value.items()))
+                except:
+                    continue
+            else:
+                try:
+                    clean_data[key] = str(value)
+                except:
+                    continue
         
-        Job: Retrieve model metadata for selection/inference
-        Returns: List of model dictionaries with all metadata
-        """
-        return self.repository.get_all_active_models()
+        data_str = str(sorted(clean_data.items()))
+        return hashlib.md5(data_str.encode()).hexdigest()
+
+
+    # def get_all_models(self, use_cache: bool = True) -> List[Dict[str, Any]]:
+    #     """
+    #     Get all active models - THREAD-SAFE VERSION
+        
+    #     Args:
+    #         use_cache: Whether to use cached results (faster)
+            
+    #     Returns:
+    #         List of active model dictionaries
+    #     """
+    #     # Return cached results if available
+    #     if use_cache and self._model_cache is not None:
+    #         logger.debug("📦 Returning models from cache")
+    #         return self._model_cache
+        
+    #     try:
+    #         # Use thread-safe database execution
+    #         rows = self.db.execute("""
+    #             SELECT model_id, model_name, model_type, model_path,
+    #                    required_features, optional_features, target_variable,
+    #                    performance_metrics, training_config, hyperparameters,
+    #                    is_active, created_at
+    #             FROM ML_Models 
+    #             WHERE is_active = TRUE
+    #             ORDER BY model_name
+    #         """)
+            
+    #         # Convert to dictionaries
+    #         models = []
+    #         for row in rows:
+    #             model_dict = {
+    #                 'model_id': row[0],
+    #                 'model_name': row[1],
+    #                 'model_type': row[2],
+    #                 'model_path': row[3],
+    #                 'required_features': row[4],
+    #                 'optional_features': row[5],
+    #                 'target_variable': row[6],
+    #                 'performance_metrics': row[7],
+    #                 'training_config': row[8],
+    #                 'hyperparameters': row[9],
+    #                 'is_active': bool(row[10]),
+    #                 'created_at': row[11]
+    #             }
+    #             models.append(model_dict)
+            
+    #         # Cache results if requested
+    #         if use_cache:
+    #             self._model_cache = models
+    #             logger.info(f"📦 Cached {len(models)} active models")
+            
+    #         logger.info(f"✅ Retrieved {len(models)} active models")
+    #         return models
+            
+    #     except Exception as e:
+    #         logger.error(f"❌ Error getting all models: {e}")
+    #         return []
+    
+    def get_all_models(self):
+        return self.repository.get_all_active_models()  # Delegate to repository
 
     def get_model_by_id(self, model_id: int) -> Optional[Dict[str, Any]]:
         """
-        Get specific model by ID
-        
-        Job: Retrieve single model metadata
-        Use case: Direct model lookup when ID is known
+        Get specific model by ID - THREAD-SAFE VERSION
         """
         try:
             rows = self.db.execute(
@@ -100,13 +183,11 @@ class SupplyChainService:
         except Exception as e:
             logger.error(f"❌ Error getting model {model_id}: {e}")
             return None
+    
 
     def get_model_by_name(self, model_name: str) -> Optional[Dict[str, Any]]:
         """
-        Get model by exact name match
-        
-        Job: Retrieve model by human-readable name
-        Use case: Model loading by name string
+        Get model by exact name match - THREAD-SAFE VERSION
         """
         try:
             rows = self.db.execute("""
@@ -142,152 +223,76 @@ class SupplyChainService:
             logger.error(f"❌ Error getting model {model_name}: {e}")
             return None
 
+
+    def _calculate_compatibility_score(self, model: Dict[str, Any], 
+                                    dataset_info: Dict[str, Any]) -> int:
+        """Calculate compatibility score (0-100) between model and dataset"""
+        score = 50  # Base score
+        
+        model_name = model.get('model_name', '').lower()
+        dataset_columns = dataset_info.get('columns', [])
+        frequency = dataset_info.get('frequency', '')
+        row_count = dataset_info.get('row_count', 0)
+        
+        # Check required features compatibility
+        required_features = model.get('required_features', [])
+        if isinstance(required_features, str):
+            try:
+                required_features = eval(required_features)
+            except:
+                required_features = []
+        
+        # Calculate feature match ratio
+        if required_features:
+            matched_features = len(set(required_features) & set(dataset_columns))
+            feature_ratio = matched_features / len(required_features)
+            score += int(feature_ratio * 30)  # Up to 30 points for feature matching
+        
+        # Check target variable
+        target_variable = model.get('target_variable', '')
+        if target_variable and target_variable in dataset_columns:
+            score += 20  # Bonus for target variable match
+        
+        # Model-specific compatibility checks
+        if 'prophet' in model_name and frequency in ['daily', 'weekly', 'monthly']:
+            score += 15
+        elif 'lightgbm' in model_name and len(dataset_columns) > 3:
+            score += 10
+        elif 'arima' in model_name and frequency != 'none':
+            score += 10
+        
+        return min(score, 100)
+
+    # Add to app/services/knowledge_base_services/core/knowledge_base_service.py
+
     def list_models(self) -> List[str]:
         """
-        Get simple list of model names
-        
-        Job: Quick lookup of available models
-        Use case: Dropdown lists, UI displays
+        Get just model names - simple list version
         """
         models = self.get_all_models()
         return [model['model_name'] for model in models]
 
     def get_model_by_type(self, model_type: str) -> List[Dict[str, Any]]:
         """
-        Get models filtered by type
-        
-        Job: Filter models by type (prophet, lightgbm, etc.)
-        Use case: Type-specific model selection
+        Get models filtered by specific type
         """
-        all_models = self.get_all_models()
-        return [m for m in all_models if m.get('model_type') == model_type]
+        return self.get_models(model_type)
 
-    # ============================================================================
-    # SCHEMA OPERATIONS
-    # ============================================================================
     
-    def register_dataset_schema(self, dataset_name: str, schema_data: Dict[str, Any]) -> bool:
-        """
-        Register a new dataset schema in the knowledge base
-        
-        Job: Create schema entries for user-uploaded datasets
-        Use case: Temporary schemas for session-based forecasting
-        """
-        try:
-            with self.db.get_cursor() as cursor:
-                # Insert into Dataset_Schemas
-                cursor.execute("""
-                    INSERT OR REPLACE INTO Dataset_Schemas 
-                    (dataset_name, description, min_rows, source_path)
-                    VALUES (?, ?, ?, ?)
-                """, (
-                    dataset_name,
-                    schema_data.get('description', f"Temporary schema for {dataset_name}"),
-                    schema_data.get('min_rows', 30),
-                    schema_data.get('source_path', 'user_upload')
-                ))
-                
-                # Get the dataset_id
-                cursor.execute(
-                    "SELECT dataset_id FROM Dataset_Schemas WHERE dataset_name = ?",
-                    (dataset_name,)
-                )
-                dataset_id = cursor.fetchone()[0]
-                
-                # Clear existing column definitions
-                cursor.execute(
-                    "DELETE FROM Column_Definitions WHERE dataset_id = ?",
-                    (dataset_id,)
-                )
-                
-                # Register column definitions
-                columns = schema_data.get('columns', [])
-                for col_info in columns:
-                    cursor.execute("""
-                        INSERT INTO Column_Definitions 
-                        (dataset_id, column_name, requirement_level, data_type, role, description)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    """, (
-                        dataset_id,
-                        col_info['name'],
-                        col_info.get('requirement_level', 'required'),
-                        col_info.get('data_type', 'unknown'),
-                        col_info.get('role', 'feature'),
-                        col_info.get('description', f"Column {col_info['name']}")
-                    ))
-                
-                # Clear cache for this schema
-                cache_key = f"schema_{dataset_name}"
-                if cache_key in self._schema_cache:
-                    del self._schema_cache[cache_key]
-                
-                logger.info(f"✅ Registered schema: {dataset_name} with {len(columns)} columns")
-                return True
-                
-        except Exception as e:
-            logger.error(f"❌ Failed to register schema '{dataset_name}': {e}")
-            return False
-
-    def delete_dataset_schema(self, dataset_name: str) -> bool:
-        """
-        Delete a dataset schema from the knowledge base
-        
-        Job: Cleanup temporary schemas after session ends
-        Use case: Session cleanup and memory management
-        """
-        try:
-            with self.db.get_cursor() as cursor:
-                # Get dataset_id first
-                cursor.execute(
-                    "SELECT dataset_id FROM Dataset_Schemas WHERE dataset_name = ?",
-                    (dataset_name,)
-                )
-                result = cursor.fetchone()
-                
-                if not result:
-                    logger.warning(f"⚠️ Schema not found for deletion: {dataset_name}")
-                    return False
-                
-                dataset_id = result[0]
-                
-                # Delete column definitions first (foreign key constraint)
-                cursor.execute(
-                    "DELETE FROM Column_Definitions WHERE dataset_id = ?",
-                    (dataset_id,)
-                )
-                
-                # Delete the schema
-                cursor.execute(
-                    "DELETE FROM Dataset_Schemas WHERE dataset_id = ?",
-                    (dataset_id,)
-                )
-                
-                # Clear cache
-                cache_key = f"schema_{dataset_name}"
-                if cache_key in self._schema_cache:
-                    del self._schema_cache[cache_key]
-                
-                logger.info(f"🧹 Deleted schema: {dataset_name}")
-                return True
-                
-        except Exception as e:
-            logger.error(f"❌ Failed to delete schema '{dataset_name}': {e}")
-            return False
 
     def get_dataset_schema(self, dataset_name: str, use_cache: bool = True) -> Optional[Dict[str, Any]]:
         """
-        Get dataset schema with column definitions
-        
-        Job: Retrieve expected structure for datasets
-        Use case: Dataset validation before forecasting
+        Get dataset schema with columns - THREAD-SAFE VERSION
         """
         cache_key = f"schema_{dataset_name}"
         
+        # Return cached schema if available
         if use_cache and cache_key in self._schema_cache:
             logger.debug(f"📦 Returning cached schema: {dataset_name}")
             return self._schema_cache[cache_key]
         
         try:
+            # Get dataset schema
             rows = self.db.execute(
                 "SELECT * FROM Dataset_Schemas WHERE dataset_name = ?",
                 (dataset_name,)
@@ -309,6 +314,7 @@ class SupplyChainService:
                 'columns': []
             }
             
+            # Get column definitions
             column_rows = self.db.execute(
                 "SELECT * FROM Column_Definitions WHERE dataset_id = ?",
                 (schema_data['dataset_id'],)
@@ -327,6 +333,7 @@ class SupplyChainService:
                     'created_at': col_row[8]
                 })
             
+            # Cache if requested
             if use_cache:
                 self._schema_cache[cache_key] = schema_data
                 logger.debug(f"📦 Cached schema: {dataset_name}")
@@ -337,13 +344,10 @@ class SupplyChainService:
         except Exception as e:
             logger.error(f"❌ Error getting schema for '{dataset_name}': {e}")
             return None
-
+    
     def validate_dataset(self, dataset_name: str, provided_columns: List[str]) -> Dict[str, Any]:
         """
-        Validate dataset against schema
-        
-        Job: Check if provided data meets schema requirements
-        Use case: Pre-processing validation
+        Validate dataset against schema - THREAD-SAFE VERSION
         """
         try:
             schema = self.get_dataset_schema(dataset_name, use_cache=True)
@@ -357,11 +361,13 @@ class SupplyChainService:
                     "provided_columns": provided_columns
                 }
             
+            # Find required columns
             required_columns = [
                 col['column_name'] for col in schema['columns']
                 if col['requirement_level'] == 'required'
             ]
             
+            # Check for missing required columns
             errors = []
             for req_col in required_columns:
                 if req_col not in provided_columns:
@@ -395,17 +401,10 @@ class SupplyChainService:
                 "required_columns": [],
                 "provided_columns": provided_columns
             }
-
-    # ============================================================================
-    # RULES OPERATIONS
-    # ============================================================================
-
+    
     def get_active_rules(self, use_cache: bool = True) -> List[Dict[str, Any]]:
         """
-        Get all active business rules
-        
-        Job: Retrieve rules for RuleEngine to execute
-        Use case: Dynamic rule-based decision making
+        Get all active rules - THREAD-SAFE VERSION
         """
         if use_cache and self._rules_cache is not None:
             return self._rules_cache
@@ -443,20 +442,17 @@ class SupplyChainService:
         except Exception as e:
             logger.error(f"❌ Error getting active rules: {e}")
             return []
-
-    # ============================================================================
-    # FORECAST RUN TRACKING
-    # ============================================================================
+    
+    
+    
 
     def create_forecast_run(self, model_id: int, input_schema: str, 
                           config: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Create forecast run record in database
-        
-        Job: Track forecasting executions for audit/history
-        Use case: Logging every forecast attempt
+        Create a new forecast run - THREAD-SAFE VERSION
         """
         try:
+            # Use context manager for transaction safety
             with self.db.get_cursor() as cursor:
                 cursor.execute("""
                     INSERT INTO Forecast_Runs 
@@ -470,6 +466,7 @@ class SupplyChainService:
                     datetime.now().isoformat()
                 ))
                 
+                # Get the inserted row
                 cursor.execute("SELECT * FROM Forecast_Runs WHERE run_id = last_insert_rowid()")
                 row = cursor.fetchone()
                 
@@ -493,18 +490,16 @@ class SupplyChainService:
         except Exception as e:
             logger.error(f"❌ Failed to create forecast run: {e}")
             raise
-
-    # ============================================================================
-    # PERFORMANCE & STATISTICS
-    # ============================================================================
-
+    
+    def clear_cache(self):
+        """Clear all cached data"""
+        self._model_cache = None
+        self._schema_cache = {}
+        self._rules_cache = None
+        logger.info("✅ Cleared all service caches")
+    
     def get_performance_stats(self) -> Dict[str, Any]:
-        """
-        Get model performance statistics
-        
-        Job: Aggregate performance metrics across models
-        Use case: Dashboard displays, model comparison
-        """
+        """Get performance statistics - THREAD-SAFE VERSION"""
         try:
             models = self.get_all_models(use_cache=False)
             stats = {
@@ -519,6 +514,7 @@ class SupplyChainService:
                 model_type = model['model_type']
                 stats['model_types'][model_type] = stats['model_types'].get(model_type, 0) + 1
                 
+                # Extract performance metrics
                 try:
                     metrics = json.loads(model['performance_metrics'])
                     mape = metrics.get('MAPE')
@@ -541,45 +537,35 @@ class SupplyChainService:
         except Exception as e:
             logger.error(f"❌ Error generating performance stats: {e}")
             return {}
-
-    # ============================================================================
-    # CACHE MANAGEMENT
-    # ============================================================================
-
-    def clear_cache(self):
-        """Clear all cached data"""
-        self._model_cache = None
-        self._schema_cache = {}
-        self._rules_cache = None
-        logger.info("✅ Cleared all service caches")
-
+    
     def close(self):
-        """Close service and cleanup"""
+        """Close service and cleanup - THREAD-SAFE VERSION"""
         try:
             self.clear_cache()
+            # ThreadSafeDB handles its own connection cleanup
             logger.info("✅ Knowledge Base Service closed successfully")
         except Exception as e:
             logger.error(f"❌ Error closing service: {e}")
 
 
 # ============================================================================
-# DEMO
+# Demo and Testing
 # ============================================================================
 
-def demo_knowledge_base_service():
-    """Demonstrate knowledge base operations"""
-    print("🚀 KNOWLEDGE BASE SERVICE DEMO")
+def demo_thread_safe_service():
+    """Demonstrate the thread-safe service"""
+    print("🚀 THREAD-SAFE KNOWLEDGE BASE SERVICE DEMO")
     print("=" * 60)
     
     try:
         service = SupplyChainService("supply_chain.db")
         
+        print("✅ Service initialized successfully!")
+        
+        # Test basic operations
         print("\n📊 Testing model retrieval...")
         models = service.get_all_models()
         print(f"Found {len(models)} active models")
-        
-        if models:
-            print(f"First model: {models[0]['model_name']}")
         
         print("\n📋 Testing schema retrieval...")
         schema = service.get_dataset_schema("demand_forecasting")
@@ -596,9 +582,10 @@ def demo_knowledge_base_service():
         print("\n📈 Testing performance stats...")
         stats = service.get_performance_stats()
         print(f"Total models: {stats['total_models']}")
+        print(f"Model types: {stats['model_types']}")
         
         service.close()
-        print("\n🎉 Demo completed successfully!")
+        print("\n🎉 Thread-safe service demo completed successfully!")
         
     except Exception as e:
         print(f"❌ Demo failed: {e}")
@@ -607,4 +594,4 @@ def demo_knowledge_base_service():
 
 
 if __name__ == "__main__":
-    demo_knowledge_base_service()
+    demo_thread_safe_service()

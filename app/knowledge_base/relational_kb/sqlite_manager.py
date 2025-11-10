@@ -2,7 +2,6 @@
 # This module defines the SQLite database schema for managing dataset schemas,
 # column definitions, machine learning models, performance history, forecast runs,
 # and feature importance.
-# app/knowledge_base/relational_kb/sqlite_manager.py
 import sqlite3
 import json
 from pathlib import Path
@@ -186,10 +185,7 @@ class SQLiteManager:
              "model_selection", 1, "1.0"),
             ("seasonal_data", "Use Prophet for seasonal data",
              "dataset.has_seasonality = True", "SELECT model_id FROM ML_Models WHERE model_name = 'Prophet'", 
-             "model_selection", 2, "1.0"),
-            ("small_dataset", "Use ARIMA for small datasets",
-             "dataset.rows < 1000", "SELECT model_id FROM ML_Models WHERE model_name = 'ARIMA'",
-             "model_selection", 3, "1.0")
+             "model_selection", 2, "1.0")
         ]
         
         for rule in rules:
@@ -212,11 +208,6 @@ class SQLiteManager:
              '{"MAE": 15.2, "RMSE": 22.1, "MAPE": 0.12}',
              '{"seasonality_mode": "multiplicative"}', dataset_id,
              '{"changepoint_prior_scale": 0.05}'),
-            ("ARIMA", "time_series", "/models/arima.pkl",
-             '["date", "demand"]', '["price"]', "demand", 
-             '{"MAE": 14.8, "RMSE": 20.5, "MAPE": 0.11}',
-             '{"order": "(1,1,1)"}', dataset_id,
-             '{}'),
             ("XGBoost", "regression", "/models/xgboost.pkl",
              '["demand", "price"]', '["promotion_flag"]', "demand", 
              '{"MAE": 11.8, "RMSE": 16.7, "MAPE": 0.09}',
@@ -237,8 +228,7 @@ class SQLiteManager:
         performance_data = [
             (1, '2024-01-15', 'demand_forecasting', '{"MAE": 12.5, "RMSE": 18.3, "MAPE": 0.10}', 1000),
             (2, '2024-01-10', 'demand_forecasting', '{"MAE": 15.2, "RMSE": 22.1, "MAPE": 0.12}', 800),
-            (3, '2024-01-12', 'demand_forecasting', '{"MAE": 14.8, "RMSE": 20.5, "MAPE": 0.11}', 1200),
-            (4, '2024-01-08', 'demand_forecasting', '{"MAE": 11.8, "RMSE": 16.7, "MAPE": 0.09}', 1500)
+            (3, '2024-01-08', 'demand_forecasting', '{"MAE": 11.8, "RMSE": 16.7, "MAPE": 0.09}', 1500)
         ]
         
         for perf in performance_data:

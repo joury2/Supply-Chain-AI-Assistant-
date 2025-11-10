@@ -1,0 +1,234 @@
+{
+  "schema_id": "lstm_totalrevenue_input_schema_v1",
+  "name": "LSTM TotalRevenue Input Schema",
+  "description": "Data format requirements for LSTM TotalRevenue forecasting model",
+  "version": "1.0",
+  "created_at": "2025-11-03 08:31:09",
+  "required_data_format": {
+    "description": "A CSV or Excel file with transaction-level or daily aggregated supply chain delivery data. Must include date, customer, location, business type, and order count.",
+    "file_types": [
+      "csv",
+      "xlsx"
+    ],
+    "aggregation_level": "transaction_level_or_daily",
+    "minimum_history": "30_days_recommended",
+    "required_columns": [
+      {
+        "name": [
+          "WorkDate",
+          "Date",
+          "date"
+        ],
+        "type": "datetime",
+        "purpose": "time_index",
+        "required": true,
+        "format": "YYYY-MM-DD or standard datetime format",
+        "notes": "The date column for the transactions. Will be automatically converted to datetime and used to extract temporal features (year, month, day, dayofweek, quarter).",
+        "examples": [
+          "2024-01-15",
+          "2024-12-31"
+        ]
+      },
+      {
+        "name": [
+          "Customer",
+          "customer",
+          "client"
+        ],
+        "type": "string (categorical)",
+        "purpose": "identifier",
+        "required": true,
+        "notes": "Customer name or ID. Must match customers seen during training. Unknown customers will be handled but may have reduced accuracy.",
+        "examples": [
+          "Home Depot",
+          "Walmart",
+          "Target",
+          "Amazon"
+        ]
+      },
+      {
+        "name": [
+          "Location",
+          "location",
+          "city"
+        ],
+        "type": "string (categorical)",
+        "purpose": "identifier",
+        "required": true,
+        "notes": "Delivery location or city. Must match locations seen during training.",
+        "examples": [
+          "Chicago",
+          "New York",
+          "Los Angeles"
+        ]
+      },
+      {
+        "name": [
+          "BusinessType",
+          "business_type",
+          "service_type"
+        ],
+        "type": "string (categorical)",
+        "purpose": "identifier",
+        "required": true,
+        "notes": "Type of delivery service. Must match business types seen during training.",
+        "examples": [
+          "Final Mile",
+          "LTL",
+          "Truckload"
+        ]
+      },
+      {
+        "name": [
+          "OrderCount",
+          "order_count",
+          "orders"
+        ],
+        "type": "integer",
+        "purpose": "exogenous_feature",
+        "required": true,
+        "validation": {
+          "min_value": 0
+        },
+        "notes": "Number of orders for the day/transaction. Used as a feature to predict revenue.",
+        "examples": [
+          25,
+          30,
+          15
+        ]
+      }
+    ],
+    "auto_generated_features": {
+      "description": "These features are automatically extracted from the WorkDate column during prediction. DO NOT include them in your upload.",
+      "features": [
+        {
+          "name": "year",
+          "type": "integer",
+          "source": "WorkDate"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "source": "WorkDate"
+        },
+        {
+          "name": "day",
+          "type": "integer",
+          "source": "WorkDate"
+        },
+        {
+          "name": "dayofweek",
+          "type": "integer",
+          "source": "WorkDate"
+        },
+        {
+          "name": "quarter",
+          "type": "integer",
+          "source": "WorkDate"
+        }
+      ]
+    },
+    "target_variable": {
+      "name": "TotalRevenue",
+      "type": "numeric (float/integer)",
+      "purpose": "prediction_target",
+      "required_for_training": true,
+      "required_for_prediction": false,
+      "notes": "This is what the model predicts. Do NOT include in prediction requests.",
+      "transformation": "log_transform_applied_internally"
+    }
+  },
+  "data_validation_rules": {
+    "date_validation": {
+      "no_future_dates_in_training": true,
+      "no_null_dates": true,
+      "date_range_check": "Must be within reasonable range (1900-2100)"
+    },
+    "numeric_validation": {
+      "OrderCount": {
+        "min": 0,
+        "max": 10000,
+        "no_nulls": true
+      },
+      "TotalRevenue": {
+        "min": 0,
+        "max": 1000000,
+        "no_nulls": true
+      }
+    },
+    "categorical_validation": {
+      "Customer": {
+        "no_nulls": true,
+        "handle_unknown": "zero_vector"
+      },
+      "Location": {
+        "no_nulls": true,
+        "handle_unknown": "zero_vector"
+      },
+      "BusinessType": {
+        "no_nulls": true,
+        "handle_unknown": "zero_vector"
+      }
+    }
+  },
+  "example_input_data": {
+    "csv_format": "WorkDate,Customer,Location,BusinessType,OrderCount\n2025-01-15,Home Depot,Chicago,Final Mile,25\n2025-01-16,Walmart,New York,LTL,30\n2025-01-17,Target,Los Angeles,Final Mile,18",
+    "json_format": [
+      {
+        "WorkDate": "2025-01-15",
+        "Customer": "Home Depot",
+        "Location": "Chicago",
+        "BusinessType": "Final Mile",
+        "OrderCount": 25
+      },
+      {
+        "WorkDate": "2025-01-16",
+        "Customer": "Walmart",
+        "Location": "New York",
+        "BusinessType": "LTL",
+        "OrderCount": 30
+      }
+    ]
+  },
+  "known_categories": {
+    "description": "Categories seen during training. Model will work best with these. Unknown categories are handled but may reduce accuracy.",
+    "customers": [
+      "Amazon",
+      "Home Depot",
+      "Walmart",
+      "Target",
+      "Costco",
+      "Chick-Fil-A",
+      "Chipotle",
+      "T.J. Maxx",
+      "Home Goods",
+      "Starbucks",
+      "Lowes",
+      "Shein"
+    ],
+    "locations": [
+      "Chicago",
+      "Nashville",
+      "Atlanta",
+      "San Francisco",
+      "San Diego",
+      "New York",
+      "Dallas",
+      "Tampa Bay",
+      "Sacramento",
+      "Milwaukee",
+      "Detroit",
+      "Birmingham",
+      "Houston",
+      "Miami",
+      "Minneapolis",
+      "Seattle",
+      "Los Angeles"
+    ],
+    "business_types": [
+      "Final Mile",
+      "Middle Mile",
+      "First Mile"
+    ]
+  }
+}

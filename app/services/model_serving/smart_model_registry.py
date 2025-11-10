@@ -232,40 +232,33 @@ class SmartModelDiscovery:
             return 'lstm'
         elif 'tft' in file_lower:
             return 'tft'
+        elif 'xgboost' in file_lower or 'xgb' in file_lower:
+            return 'xgboost'
         else:
             ext = Path(model_file).suffix
             return f'unknown{ext}'
     
     def _extract_required_features(self, metadata: Dict, schema: Dict) -> List[str]:
-        """Extract required features from metadata"""
+        """Extract required features from metadata and schema"""
         features = []
         
         # Try metadata first
         tech_specs = metadata.get('technical_specifications', {})
         input_req = tech_specs.get('input_requirements', {})
-        
         required_cols = input_req.get('required_columns', [])
-        required_regressors = input_req.get('required_regressors', [])
-        critical_features = tech_specs.get('feature_dependencies', {}).get('critical_features', [])
         
-        features.extend(required_cols)
-        features.extend(required_regressors)
-        features.extend(critical_features)
+        if required_cols:
+            features.extend(required_cols)
         
-        # Try schema
-        if schema:
-            schema_features = schema.get('feature_names', [])
-            features.extend(schema_features[:5])  # Add first 5 from schema
+        # Try schema as fallback
+        if schema and not features:
+            feature_names = schema.get('feature_names', [])
+            features.extend(feature_names)
         
-        # Remove duplicates, preserve order
-        seen = set()
-        unique_features = []
-        for feat in features:
-            if feat not in seen:
-                seen.add(feat)
-                unique_features.append(feat)
+        # Remove duplicates and empty strings
+        features = [f for f in features if f and f.strip()]
         
-        return unique_features[:10]  # Return top 10
+        return list(set(features))
     
     def _extract_optional_features(self, metadata: Dict, schema: Dict) -> List[str]:
         """Extract optional features"""
@@ -285,33 +278,53 @@ class SmartModelDiscovery:
             optional = [f for f in all_features if f not in required]
             features.extend(optional)
         
-        # Remove duplicates
+        # Remove duplicates and empty strings
+        features = [f for f in features if f and f.strip()]
+        
         return list(set(features))
     
     def _extract_target_variable(self, metadata: Dict, schema: Dict, frequency: str) -> str:
-        """Extract target variable name"""
-        # Try metadata
+        """Extract target variable name - FIXED to check correct fields"""
+        
+        # 1. Try use_case_profile first (most accurate)
         use_case = metadata.get('use_case_profile', {})
-        target = use_case.get('target_entity', '')
+        target = use_case.get('target_variable', '')  # ✅ CORRECT FIELD
         
         if target:
+            logger.debug(f"Target from use_case_profile: {target}")
             return target
         
-        # Try schema
+        # 2. Try technical_specifications (for complex models like LSTM)
+        tech_specs = metadata.get('technical_specifications', {})
+        input_req = tech_specs.get('input_requirements', {})
+        
+        # Check for required_columns that look like targets
+        required_cols = input_req.get('required_columns', [])
+        target_candidates = [col for col in required_cols 
+                            if col.lower() in ['sales', 'revenue', 'totalrevenue', 
+                                            'demand', 'numberofpieces', 'pieces', 
+                                            'orders', 'quantity', 'y']]
+        
+        if target_candidates:
+            logger.debug(f"Target from required_columns: {target_candidates[0]}")
+            return target_candidates[0]
+        
+        # 3. Try schema
         if schema:
             target = schema.get('target_variable', '')
             if target:
+                logger.debug(f"Target from schema: {target}")
                 return target
         
-        # Fallback: derive from frequency
-        if frequency == 'daily':
-            return 'daily_demand'
-        elif frequency == 'monthly':
-            return 'monthly_sales'
-        elif frequency == 'weekly':
-            return 'weekly_orders'
-        else:
-            return 'target'
+        # 4. Fallback based on frequency (legacy logic)
+        fallback_map = {
+            'daily': 'daily_sales',
+            'monthly': 'monthly_sales',
+            'weekly': 'weekly_orders'
+        }
+        fallback = fallback_map.get(frequency, 'target')
+        logger.warning(f"⚠️ Using fallback target: {fallback}")
+        return fallback
     
     def _get_min_rows(self, frequency: str) -> int:
         """Get minimum required rows for frequency"""
@@ -476,22 +489,22 @@ class SmartModelRegistrar:
             return 'feature'
 
     def _register_ml_model(self, model_data: Dict[str, Any], dataset_id: int):
-        """Register ML model - FIXED VERSION"""
+        """Register ML model - COMPLETE FIX"""
         
-        # ✅ FIX: Use correct column names that match your actual database schema
+        # ✅ Include ALL columns from ML_Models schema
         self.db.conn.execute("""
             INSERT OR REPLACE INTO ML_Models 
             (model_name, model_type, model_path, required_features, optional_features,
             target_variable, performance_metrics, training_config, dataset_id, 
-            hyperparameters, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            hyperparameters, best_for, not_recommended_for, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             model_data['model_name'],
             model_data['model_type'],
             model_data['model_path'],
             json.dumps(model_data['required_features']),
             json.dumps(model_data['optional_features']),
-            model_data['target_variable'],
+            model_data['target_variable'],  # ✅ Will be correct after fixing extraction
             json.dumps(model_data['performance_metrics']),
             json.dumps({
                 'framework': model_data['framework'],
@@ -499,8 +512,10 @@ class SmartModelRegistrar:
                 'description': model_data.get('description', '')
             }),
             dataset_id,
-            json.dumps({}),  # Empty hyperparameters for now
-            1  # is_active = True
+            json.dumps({}),  # hyperparameters
+            json.dumps(model_data['best_for']),  # ✅ NOW INCLUDED
+            json.dumps(model_data['not_recommended_for']),  # ✅ NOW INCLUDED
+            1  # is_active
         ))
 
     def _register_business_rules(self, model_data: Dict[str, Any]):
@@ -556,6 +571,8 @@ def discover_and_register_models(
         print(f"   Frequency: {model['forecasting_frequency']}")
         print(f"   Path: {model['model_path']}")
         print(f"   Required Features: {len(model['required_features'])}")
+        print(f"   Target: {model['target_variable']}")
+        print(f"   Best For: {model['best_for']}")
         print(f"   Performance: R²={model['performance_metrics'].get('r2_score', 'N/A')}")
     
     # Step 3: Register to database
@@ -579,7 +596,7 @@ def discover_and_register_models(
     print(f"   Active models in database: {count}")
     
     cursor = db.conn.execute("""
-        SELECT model_name, model_type, target_variable 
+        SELECT model_name, model_type, target_variable, best_for 
         FROM ML_Models 
         WHERE is_active = 1
         ORDER BY model_name
@@ -587,7 +604,10 @@ def discover_and_register_models(
     
     print(f"\n📋 REGISTERED MODELS:")
     for row in cursor.fetchall():
-        print(f"   • {row['model_name']} ({row['model_type']}) -> {row['target_variable']}")
+        best_for = json.loads(row['best_for']) if row['best_for'] else []
+        print(f"   • {row['model_name']} ({row['model_type']})")
+        print(f"     Target: {row['target_variable']}")
+        print(f"     Best For: {best_for}")
     
     db.conn.close()
     

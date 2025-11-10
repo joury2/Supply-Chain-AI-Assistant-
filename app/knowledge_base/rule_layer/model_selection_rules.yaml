@@ -1,81 +1,82 @@
 # app/knowledge_base/rule_layer/model_selection_rules.yaml
-description: Simplified model selection rules that work with actual dataset structure
+description: Fixed model selection rules with case-insensitive column matching
 rules:
   # High-priority retail-specific rules
-  - action: "model_name = 'Monthly_Shop_Sales_Forecaster'"
-    condition: "dataset.get('frequency') == 'monthly' and 'shop_id' in dataset.get('columns', []) and dataset.get('granularity') == 'shop_level' and dataset.get('row_count', 0) >= 12"
+  - name: monthly_lightgbm_forecasting
+    priority: 10
     description: Select LightGBM monthly sales forecaster for shop-level monthly data
+    condition: >
+      dataset_info.get('frequency') == 'monthly'
+      and dataset_info.get('granularity') == 'shop_level'
+      and dataset_info.get('row_count', 0) >= 12
+      and any(col.lower() in ['shop_id', 'store_id'] for col in dataset_info.get('columns', []))
+    action: "model_name = 'Monthly_Shop_Sales_Forecaster'"
     message: LightGBM monthly forecaster selected - optimized for monthly shop sales
-    name: monthly_lightgbm_forecasting
-    priority: 10
     
-  - action: "model_name = 'Daily_Shop_Sales_Forecaster'"
-    condition: "dataset.get('frequency') == 'daily' and 'shop_id' in dataset.get('columns', []) and dataset.get('granularity') == 'shop_level' and dataset.get('row_count', 0) >= 30"
+  - name: daily_lightgbm_forecasting
+    priority: 10
     description: Select LightGBM daily sales forecaster for shop-level daily data
+    condition: >
+      dataset_info.get('frequency') == 'daily'
+      and dataset_info.get('granularity') == 'shop_level'
+      and dataset_info.get('row_count', 0) >= 30
+      and any(col.lower() in ['shop_id', 'store_id'] for col in dataset_info.get('columns', []))
+    action: "model_name = 'Daily_Shop_Sales_Forecaster'"
     message: LightGBM daily forecaster selected - optimized for daily shop sales
-    name: daily_lightgbm_forecasting
-    priority: 10
 
-  # Performance-based selection
-  - action: "model_name = 'Prophet'"
-    condition: "dataset.get('frequency') in ['daily', 'weekly', 'monthly'] and dataset.get('row_count', 0) >= 100"
-    description: Select best performing time series model for quality data
-    message: Prophet selected - reliable for time series forecasting with good data quality
-    name: performance_based_selection
+  # LSTM for transaction-level revenue forecasting
+  - name: lstm_transaction_revenue_forecasting
     priority: 9
+    description: Select LSTM for daily transaction-level revenue forecasting
+    condition: >
+      dataset_info.get('frequency') == 'daily'
+      and dataset_info.get('granularity') == 'transaction_level'
+      and dataset_info.get('row_count', 0) >= 30
+      and any(col in dataset_info.get('columns', []) for col in ['Customer', 'customer'])
+      and any(col in dataset_info.get('columns', []) for col in ['Location', 'location'])
+      and any(col in dataset_info.get('columns', []) for col in ['BusinessType', 'business_type'])
+      and any(col in dataset_info.get('columns', []) for col in ['TotalRevenue', 'revenue', 'Revenue'])
+    action: "model_name = 'LSTM Daily TotalRevenue Forecaster'"
+    message: LSTM selected - optimized for customer/location/business type revenue patterns
 
-  # Test Auto Model rules (retail focused)
-  - action: "model_name = 'Test_Auto_Model'"
-    condition: "('shop_id' in dataset.get('columns', []) or 'store_id' in dataset.get('columns', [])) and dataset.get('granularity') in ['shop_level', 'store_level']"
-    description: Select Test_Auto_Model for retail data
-    message: Test_Auto_Model selected - optimized for retail forecasting
-    name: test_auto_model_retail_data
+  # XGBoost for monthly pieces forecasting (multi-location)
+  - name: xgboost_location_pieces_forecasting
     priority: 9
+    description: Select XGBoost for monthly location-level pieces forecasting
+    condition: >
+      dataset_info.get('frequency') == 'monthly'
+      and dataset_info.get('row_count', 0) >= 12
+      and any(col in dataset.get('columns', []) for col in ['Location', 'location'])
+      and any(col in dataset.get('columns', []) for col in ['NumberOfPieces', 'pieces', 'Pieces'])
+    action: "model_name = 'XGBoost Multi-Location NumberOfPieces Forecaster'"
+    message: XGBoost selected - optimized for multi-location inventory planning
     
-  - action: "model_name = 'Test_Auto_Model'"
-    condition: "dataset.get('frequency') == 'monthly' and ('shop_id' in dataset.get('columns', []) or 'store_id' in dataset.get('columns', []))"
-    description: Select Test_Auto_Model for monthly retail data
-    message: Test_Auto_Model selected - ideal for monthly retail data
-    name: test_auto_model_monthly_retail
-    priority: 9
-
-  # Feature-rich dataset rules
-  - action: "model_name = 'XGBoost'"
-    condition: "len(dataset.get('columns', [])) >= 5 and dataset.get('row_count', 0) >= 100"
-    description: Select XGBoost when you have rich feature sets
-    message: XGBoost selected - excellent for feature-rich data
-    name: xgboost_feature_rich
+  # Prophet for various time series scenarios
+  - name: prophet_aggregate_forecasting
     priority: 8
-
-  # Prophet rules for time series
-  - action: "model_name = 'Prophet'"
-    condition: "dataset.get('frequency') in ['daily', 'weekly', 'monthly'] and dataset.get('row_count', 0) >= 30"
-    description: Select Prophet for time series data with sufficient history
-    message: Prophet selected - reliable for time series forecasting
-    name: prophet_time_series
-    priority: 7
-
-  # Prophet for missing data
-  - action: "model_name = 'Prophet'"
-    condition: "dataset.get('missing_percentage', 0) > 0.1 and dataset.get('frequency') in ['daily', 'weekly', 'monthly']"
-    description: Select Prophet for data with missing values
-    message: Prophet selected - handles missing data well
-    name: prophet_missing_data
-    priority: 6
-
-  # Fallback rules
-  - action: "model_name = 'Test_Auto_Model'"
-    condition: "dataset.get('row_count', 0) >= 20 and len(dataset.get('columns', [])) >= 2"
-    description: Select Test_Auto_Model as fallback option
-    message: Test_Auto_Model selected as fallback option
-    name: test_auto_model_fallback
-    priority: 3
+    description: Select Prophet for aggregate-level time series data
+    condition: >
+      dataset_info.get('frequency') in ['daily', 'weekly', 'monthly']
+      and dataset_info.get('row_count', 0) >= 30
+      and dataset_info.get('granularity') not in ['shop_level', 'store_level']
+    action: "model_name = 'Supply_Chain_Prophet_Forecaster'"
+    message: Prophet selected - handles aggregate time series with trends and seasonality
     
-  - action: "model_name = 'Prophet'"
-    condition: "dataset.get('row_count', 0) >= 20"
-    description: Prophet as last resort
-    message: Prophet selected as reliable fallback option
-    name: fallback_prophet
+  - name: prophet_missing_data_handling
+    priority: 7
+    description: Select Prophet for data with missing values
+    condition: >
+      dataset_info.get('missing_percentage', 0) > 0.1
+      and dataset_info.get('frequency') in ['daily', 'weekly', 'monthly']
+    action: "model_name = 'Supply_Chain_Prophet_Forecaster'"
+    message: Prophet selected - robust to missing data
+
+  # Fallback rule - FIXED MODEL NAME
+  - name: fallback_prophet
     priority: 1
+    description: Prophet as last resort for any time series data
+    condition: "dataset_info.get('row_count', 0) >= 20"
+    action: "model_name = 'Supply_Chain_Prophet_Forecaster'"
+    message: Prophet selected as reliable fallback option
 
 version: '2.1'

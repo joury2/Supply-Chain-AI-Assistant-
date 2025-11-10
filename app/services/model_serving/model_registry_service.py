@@ -676,9 +676,7 @@ class ModelWrapper:
         """Detect the type of model"""
         model_class = model.__class__.__name__
         
-        if 'ARIMA' in model_class or 'SARIMAX' in model_class:
-            return 'arima'
-        elif 'Prophet' in model_class:
+        if 'Prophet' in model_class:
             return 'prophet'
         elif 'LightGBM' in model_class or 'LGBM' in model_class:
             return 'lightgbm'
@@ -727,8 +725,6 @@ class ModelWrapper:
                 return self._predict_lightgbm(data, horizon)
             elif self.model_type == 'prophet':
                 return self._predict_prophet(horizon)
-            elif self.model_type == 'arima':
-                return self._predict_arima(horizon)
             else:
                 # Generic fallback
                 return self._predict_generic(data, horizon)
@@ -789,21 +785,6 @@ class ModelWrapper:
             return forecast['yhat'].tail(horizon).tolist()
         except Exception as e:
             logger.error(f"Prophet prediction failed: {e}")
-            # Fallback
-            import numpy as np
-            return np.random.normal(100, 10, horizon).tolist()
-    
-    def _predict_arima(self, horizon: int):
-        """Make predictions with ARIMA model"""
-        try:
-            # ARIMA/SARIMAX forecast
-            forecast = self.model.forecast(steps=horizon)
-            if hasattr(forecast, 'tolist'):
-                return forecast.tolist()
-            else:
-                return list(forecast)
-        except Exception as e:
-            logger.error(f"ARIMA prediction failed: {e}")
             # Fallback
             import numpy as np
             return np.random.normal(100, 10, horizon).tolist()

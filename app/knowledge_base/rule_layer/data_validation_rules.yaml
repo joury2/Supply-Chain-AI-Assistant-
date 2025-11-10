@@ -33,13 +33,16 @@ rules:
     message: "Too many missing values (>30%). Please clean data before forecasting."
 
   # IMPROVED TARGET COLUMN DETECTION
-  - name: "missing_target_column_improved"
+  - name: "missing_target_column_comprehensive"
     description: "Check if any known target column is present"
-    condition: "not any(target in dataset.get('columns', []) for target in ['sales', 'demand', 'value', 'target', 'quantity', 'revenue', 'volume'])"
+    condition: >
+      not any(target in dataset.get('columns', []) 
+              for target in ['sales', 'demand', 'value', 'target', 'quantity', 
+                            'revenue', 'TotalRevenue', 'volume', 
+                            'NumberOfPieces', 'pieces', 'orders', 'y'])
     action: "REJECT"
     priority: 8
-    message: "No target column found. Expected: sales, demand, value, target, quantity, revenue, or volume."
-
+    message: "No target column found. Expected one of: sales, demand, value, target, quantity, revenue, TotalRevenue, volume, NumberOfPieces, pieces, orders, y"
   # Warnings
   - name: "data_quality_moderate_missing"
     description: "Warn about moderate missing values"

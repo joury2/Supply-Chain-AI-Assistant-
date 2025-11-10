@@ -106,8 +106,7 @@ FROM Dataset_Schemas WHERE dataset_name = 'demand_forecasting';
 INSERT OR IGNORE INTO Rules (name, description, condition, action, rule_type, priority, version)
 VALUES 
 ('large_dataset_tft', 'Use TFT for large datasets', 'dataset.rows > 10000', 'SELECT model_id FROM ML_Models WHERE model_name = ''TFT''', 'model_selection', 1, '1.0'),
-('seasonal_data', 'Use Prophet for seasonal data', 'dataset.has_seasonality = True', 'SELECT model_id FROM ML_Models WHERE model_name = ''Prophet''', 'model_selection', 2, '1.0'),
-('small_dataset', 'Use ARIMA for small datasets', 'dataset.rows < 1000', 'SELECT model_id FROM ML_Models WHERE model_name = ''ARIMA''', 'model_selection', 3, '1.0');
+('seasonal_data', 'Use Prophet for seasonal data', 'dataset.has_seasonality = True', 'SELECT model_id FROM ML_Models WHERE model_name = ''Prophet''', 'model_selection', 2, '1.0');
 
 -- Insert ML models
 INSERT OR IGNORE INTO ML_Models (model_name, model_type, model_path, required_features, optional_features, target_variable, performance_metrics, training_config, hyperparameters)
@@ -121,9 +120,3 @@ SELECT
     'Prophet', 'time_series', '/models/prophet.pkl', '["date", "demand"]', '[]', 'demand',
     '{"MAE": 15.2, "RMSE": 22.1, "MAPE": 0.12}', '{"seasonality_mode": "multiplicative"}', '{"changepoint_prior_scale": 0.05}'
 WHERE NOT EXISTS (SELECT 1 FROM ML_Models WHERE model_name = 'Prophet');
-
-INSERT OR IGNORE INTO ML_Models (model_name, model_type, model_path, required_features, optional_features, target_variable, performance_metrics, training_config, hyperparameters)
-SELECT 
-    'ARIMA', 'time_series', '/models/arima.pkl', '["date", "demand"]', '["price"]', 'demand',
-    '{"MAE": 14.8, "RMSE": 20.5, "MAPE": 0.11}', '{"order": "(1,1,1)"}', '{}'
-WHERE NOT EXISTS (SELECT 1 FROM ML_Models WHERE model_name = 'ARIMA');

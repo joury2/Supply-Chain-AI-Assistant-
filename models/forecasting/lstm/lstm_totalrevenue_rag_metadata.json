@@ -1,0 +1,353 @@
+{
+  "model_identity": {
+    "model_id": "lstm_totalrevenue_v1",
+    "name": "LSTM Daily TotalRevenue Forecaster",
+    "model_type": "LSTM_Single_Output",
+    "framework": "tensorflow_keras",
+    "architecture": "recurrent_neural_network",
+    "domain": "supply_chain_logistics",
+    "industry": "retail_delivery",
+    "created_at": "2025-11-03 08:31:09",
+    "version": "1.0",
+    "model_file": "lstm_totalrevenue_v1.h5",
+    "preprocessor_file": "lstm_totalrevenue_preprocessor_v1.pkl",
+    "schema_file": "lstm_totalrevenue_input_schema.json"
+  },
+  "use_case_profile": {
+    "forecasting_type": "daily_revenue_prediction",
+    "forecast_frequency": "DAILY",
+    "model_category": "supervised_single_output_regression",
+    "granularity": "transaction_level",
+    "target_variable": "TotalRevenue",
+    "horizon": "single_day_ahead",
+    "business_context": "supply_chain_delivery_operations",
+    "best_for": [
+      "daily_revenue_forecasting",
+      "financial_planning_and_budgeting",
+      "customer_profitability_analysis",
+      "location_performance_forecasting",
+      "business_type_revenue_comparison",
+      "short_term_cash_flow_prediction",
+      "operational_revenue_estimation",
+      "workforce_cost_planning"
+    ],
+    "not_recommended_for": [
+      "item_level_forecasting",
+      "weekly_monthly_aggregates_directly",
+      "new_customers_without_history",
+      "new_locations_without_history",
+      "long_term_strategic_planning_beyond_3_months",
+      "real_time_intraday_predictions",
+      "markets_with_completely_different_patterns",
+      "scenarios_with_extreme_market_disruptions"
+    ],
+    "typical_users": [
+      "financial_analysts",
+      "operations_managers",
+      "supply_chain_planners",
+      "revenue_managers",
+      "business_intelligence_teams"
+    ]
+  },
+  "performance_profile": {
+    "train": {
+      "r2_score": 0.9671539843592158,
+      "mae": 248.22632469476954,
+      "rmse": 632.0999039840276,
+      "mape": 11.57745026815726,
+      "confidence_level": "high"
+    },
+    "test": {
+      "r2_score": 0.9651846102595609,
+      "mae": 316.68932106321563,
+      "rmse": 795.3332545296413,
+      "mape": 11.39238443102475,
+      "confidence_level": "high"
+    },
+    "business_interpretation": {
+      "variance_explained": "96.52%",
+      "average_error_dollars": "$316.69",
+      "average_error_percentage": "11.39%",
+      "reliability": "Suitable for daily operational and financial planning"
+    },
+    "training_info": {
+      "total_parameters": 28481,
+      "trainable_parameters": 28481,
+      "training_samples": 91948,
+      "test_samples": 22851,
+      "train_period": "2020-01-01 to 2023-12-31",
+      "test_period": "2024-01-01 to 2024-12-31",
+      "epochs_completed": 30,
+      "early_stopping_triggered": true
+    }
+  },
+  "features": {
+    "input_features": {
+      "categorical": [
+        "Customer",
+        "Location",
+        "BusinessType"
+      ],
+      "numerical": [
+        "OrderCount",
+        "year",
+        "month",
+        "day",
+        "dayofweek",
+        "quarter"
+      ],
+      "total_raw_features": 9
+    },
+    "feature_engineering": {
+      "date_features_extracted": [
+        "year",
+        "month",
+        "day",
+        "dayofweek",
+        "quarter"
+      ],
+      "extraction_method": "pandas_datetime_attributes"
+    },
+    "preprocessing": {
+      "categorical_encoding": "OneHotEncoder",
+      "categorical_unknown_handling": "ignore_creates_zero_vector",
+      "numeric_scaling": "StandardScaler",
+      "target_transformation": "log_transform",
+      "target_inverse_transform": "np.exp(predictions)"
+    },
+    "input_shape": {
+      "timesteps": 1,
+      "features_after_preprocessing": 38
+    },
+    "all_feature_names_after_preprocessing": [
+      "OrderCount",
+      "year",
+      "month",
+      "day",
+      "dayofweek",
+      "quarter",
+      "Customer_Amazon",
+      "Customer_Chick-Fil-A",
+      "Customer_Chipotle",
+      "Customer_Costco",
+      "Customer_Home Depot",
+      "Customer_Home Goods",
+      "Customer_Lowes",
+      "Customer_Shein",
+      "Customer_Starbucks",
+      "Customer_T.J. Maxx",
+      "Customer_Target",
+      "Customer_Walmart",
+      "Location_Atlanta",
+      "Location_Birmingham",
+      "Location_Chicago",
+      "Location_Dallas",
+      "Location_Detroit",
+      "Location_Houston",
+      "Location_Los Angeles",
+      "Location_Miami",
+      "Location_Milwaukee",
+      "Location_Minneapolis",
+      "Location_Nashville",
+      "Location_New York",
+      "Location_Sacramento",
+      "Location_San Diego",
+      "Location_San Francisco",
+      "Location_Seattle",
+      "Location_Tampa Bay",
+      "BusinessType_Final Mile",
+      "BusinessType_First Mile",
+      "BusinessType_Middle Mile"
+    ]
+  },
+  "data_info": {
+    "source": "/content/drive/MyDrive/SDA project /DataSets/supply_chain_deliveries.csv",
+    "total_records_used": 126255,
+    "train_records": 91948,
+    "test_records": 22851,
+    "train_period": "2020-01-01 to 2023-12-31",
+    "test_period": "2024-01-01 to 2024-12-31",
+    "unique_customers": 12,
+    "unique_locations": 17,
+    "unique_business_types": 3,
+    "data_frequency": "transaction_level",
+    "data_quality": {
+      "completeness": "100% after removing NaNs",
+      "consistency": "High",
+      "requires_cleaning": "Minimal"
+    }
+  },
+  "model_parameters": {
+    "lstm_units": 64,
+    "dropout_rate": 0.2,
+    "dense_units": 32,
+    "activation_lstm": "relu",
+    "activation_dense": "relu",
+    "learning_rate": 0.001,
+    "optimizer": "Adam",
+    "loss_function": "mse",
+    "batch_size": 32,
+    "max_epochs": 50,
+    "early_stopping_patience": 10,
+    "validation_split": 0.1
+  },
+  "architecture_details": {
+    "layer_structure": [
+      "Input: (1, 38)",
+      "LSTM: 64 units (relu)",
+      "Dropout: 0.2",
+      "Dense: 32 units (relu)",
+      "Dropout: 0.2",
+      "Dense: 1 unit (output)"
+    ],
+    "total_parameters": 28481,
+    "model_size": "medium",
+    "outputs": 1
+  },
+  "technical_specifications": {
+    "input_requirements": {
+      "required_columns": [
+        "WorkDate",
+        "Customer",
+        "Location",
+        "BusinessType",
+        "OrderCount"
+      ],
+      "data_format": "pandas_dataframe_or_csv",
+      "preprocessing_pipeline": "sklearn_ColumnTransformer",
+      "required_scalers": [
+        "StandardScaler",
+        "OneHotEncoder"
+      ]
+    },
+    "compatibility": {
+      "framework": "tensorflow_keras_2.x",
+      "python_version": "3.7+",
+      "requires_gpu": "optional_cpu_sufficient",
+      "inference_mode": "batch_prediction",
+      "deployment_options": [
+        "local",
+        "cloud",
+        "api_endpoint"
+      ]
+    }
+  },
+  "operational_profile": {
+    "inference_speed": "fast_batch_processing",
+    "resource_requirements": "low_to_medium",
+    "memory_footprint": "medium",
+    "scalability": "handles_thousands_of_daily_predictions",
+    "deployment_complexity": "medium_requires_preprocessing",
+    "update_frequency": "recommended_quarterly_or_when_mape_exceeds_15_percent",
+    "monitoring_kpis": [
+      "R² > 0.6",
+      "MAPE < 15%",
+      "Prediction drift < 20%",
+      "No systematic bias (mean error near 0)"
+    ]
+  },
+  "business_value": {
+    "primary_benefits": [
+      "96.52% of daily revenue variance explained",
+      "Average prediction error: $316.69 (11.39%)",
+      "Enables accurate day-ahead revenue planning",
+      "Supports customer-specific revenue forecasting",
+      "Handles location and business type variations",
+      "Trained on 4 years (2020-2023), tested on 2024"
+    ],
+    "suitable_business_cases": [
+      "daily_revenue_budgeting",
+      "customer_profitability_analysis",
+      "location_performance_forecasting",
+      "business_type_comparison",
+      "operational_cost_planning",
+      "cash_flow_forecasting",
+      "resource_allocation_decisions"
+    ],
+    "roi_potential": {
+      "operational_efficiency": "10-15% improvement in daily revenue planning",
+      "financial_accuracy": "reduced budget variance through better forecasting",
+      "decision_quality": "data-driven resource allocation"
+    },
+    "model_advantages": [
+      "single_model_for_revenue_prediction",
+      "handles_categorical_features_automatically",
+      "temporal_patterns_captured_by_lstm",
+      "log_transform_handles_revenue_skewness",
+      "trained_on_diverse_customers_and_locations",
+      "temporal_split_prevents_data_leakage",
+      "fast_inference_suitable_for_production"
+    ],
+    "model_limitations": [
+      "requires_all_input_features",
+      "works_best_with_known_categories",
+      "new_customers_locations_may_have_reduced_accuracy",
+      "single_day_horizon_only",
+      "less_interpretable_than_tree_models",
+      "sensitive_to_data_quality",
+      "may_not_capture_extreme_market_events"
+    ]
+  },
+  "usage_notes": {
+    "how_to_load_model": "model = tf.keras.models.load_model('/content/drive/MyDrive/SDA project /ML Models Code/lstm model data_3/lstm_totalrevenue_v1.h5', compile=False)",
+    "how_to_load_preprocessor": "with open('/content/drive/MyDrive/SDA project /ML Models Code/lstm model data_3/lstm_totalrevenue_preprocessor_v1.pkl', 'rb') as f: preprocessor = pickle.load(f)",
+    "required_input_columns": [
+      "WorkDate",
+      "Customer",
+      "Location",
+      "BusinessType",
+      "OrderCount"
+    ],
+    "output_format": "Single array: TotalRevenue predictions",
+    "important_notes": [
+      "Model uses log-transformed target (predictions need np.exp())",
+      "Requires same feature engineering as training",
+      "Works best with known Customer/Location/BusinessType combinations",
+      "Date features are auto-generated from WorkDate",
+      "Unknown categories handled but may reduce accuracy"
+    ],
+    "prediction_workflow": [
+      "1. Load model and preprocessor",
+      "2. Prepare DataFrame with required columns: ['WorkDate', 'Customer', 'Location', 'BusinessType', 'OrderCount']",
+      "3. Extract date features (year, month, day, dayofweek, quarter)",
+      "4. Drop WorkDate column",
+      "5. Reorder columns to expected order",
+      "6. X_prep = preprocessor.transform(X_new)",
+      "7. X_lstm = X_prep.reshape((n_samples, 1, n_features))",
+      "8. predictions_log = model.predict(X_lstm)",
+      "9. predictions = np.exp(predictions_log.flatten())"
+    ]
+  },
+  "inference_example_code": "\n# =========================================================\n# EXAMPLE: HOW TO USE THIS MODEL FOR PREDICTIONS\n# =========================================================\n\nimport pandas as pd\nimport numpy as np\nimport pickle\nfrom tensorflow.keras.models import load_model\n\n# 1. Load model and preprocessor\nmodel = load_model('lstm_totalrevenue_v1.h5', compile=False)\nwith open('lstm_totalrevenue_preprocessor_v1.pkl', 'rb') as f:\n    preprocessor = pickle.load(f)\n\n# 2. Prepare new data (must have these columns)\n# Required: WorkDate, Customer, Location, BusinessType, OrderCount\nnew_data = pd.DataFrame({\n    'WorkDate': ['2025-01-15', '2025-01-16', '2025-01-17'],\n    'Customer': ['Home Depot', 'Walmart', 'Target'],\n    'Location': ['Chicago', 'New York', 'Los Angeles'],\n    'BusinessType': ['Final Mile', 'LTL', 'Final Mile'],\n    'OrderCount': [25, 30, 18]\n})\n\n# 3. Feature engineering (SAME AS TRAINING)\nnew_data['WorkDate'] = pd.to_datetime(new_data['WorkDate'])\nnew_data['year'] = new_data['WorkDate'].dt.year\nnew_data['month'] = new_data['WorkDate'].dt.month\nnew_data['day'] = new_data['WorkDate'].dt.day\nnew_data['dayofweek'] = new_data['WorkDate'].dt.dayofweek\nnew_data['quarter'] = new_data['WorkDate'].dt.quarter\n\n# Save dates for output\ndates = new_data['WorkDate'].copy()\n\n# Drop WorkDate\nnew_data = new_data.drop('WorkDate', axis=1)\n\n# 4. Reorder columns\nexpected_order = ['Customer', 'Location', 'BusinessType', 'OrderCount', \n                  'year', 'month', 'day', 'dayofweek', 'quarter']\nnew_data = new_data[expected_order]\n\n# 5. Preprocess\nX_new_prep = preprocessor.transform(new_data)\n\n# 6. Reshape for LSTM\nX_new_lstm = X_new_prep.reshape((X_new_prep.shape[0], 1, X_new_prep.shape[1]))\n\n# 7. Predict (returns log-transformed values)\npredictions_log = model.predict(X_new_lstm)\n\n# 8. Inverse transform (convert back to original scale)\npredicted_revenue = np.exp(predictions_log.flatten())\n\n# 9. Display results\nresults = pd.DataFrame({\n    'Date': dates,\n    'Predicted_TotalRevenue': predicted_revenue\n})\nprint(results)\n",
+  "model_card": {
+    "intended_use": "Daily revenue forecasting for supply chain delivery operations",
+    "out_of_scope": [
+      "Monthly_strategic_planning",
+      "New_customer_predictions_without_any_history",
+      "Item_level_forecasting",
+      "Real_time_intraday_predictions",
+      "Markets_significantly_different_from_training_data"
+    ],
+    "ethical_considerations": [
+      "May perpetuate historical patterns in customer treatment",
+      "Revenue predictions may not account for unprecedented market events",
+      "Model trained on 2020-2023 data including pandemic effects",
+      "Should not be sole basis for high-stakes financial decisions"
+    ],
+    "caveats": [
+      "Performance degrades with extreme market disruptions",
+      "Requires regular monitoring and retraining",
+      "Less interpretable than traditional statistical models",
+      "Predictions for unknown categories may be less accurate",
+      "Single-day horizon limits long-term planning utility"
+    ],
+    "recommendations": [
+      "Monitor forecast accuracy weekly",
+      "Retrain quarterly or when MAPE exceeds 15%",
+      "Use human oversight for high-value decisions",
+      "Validate predictions against business logic",
+      "Document prediction failures for model improvement",
+      "Combine with domain expertise for best results"
+    ]
+  }
+}

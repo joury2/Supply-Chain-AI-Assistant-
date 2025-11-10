@@ -8,6 +8,15 @@ import hashlib
 from typing import Dict, List, Any, Optional
 import logging
 
+# In rule_engine_service.py
+from app.services.shared_utils import (
+    parse_features,
+    safe_json_load,
+    sanitize_dataset_info,
+    calculate_model_compatibility_score,
+    generate_compatibility_reasons,
+    generate_cache_key
+)
 
 
 # Add project root to path
@@ -50,6 +59,8 @@ class RuleEngineService:
         self._analysis_cache = {}
         # self._compatibility_cache = {}
         
+        
+
         if USE_REAL_ENGINE and ActualRuleEngine is not None:
             try:
                 self.rule_engine = ActualRuleEngine(db_connection)
@@ -63,15 +74,16 @@ class RuleEngineService:
             self.rule_engine = MinimalRuleEngine()
             logger.info("⚠️ Using minimal rule engine fallback")
 
-    def _generate_dataset_hash(self, dataset_info: Dict[str, Any]) -> str:
-        """Generate unique hash for dataset to enable caching"""
-        # Remove any DataFrame objects before hashing to avoid serialization issues
-        sanitized_info = dataset_info.copy()
-        if 'data' in sanitized_info:
-            del sanitized_info['data']
-        dataset_str = json.dumps(sanitized_info, sort_keys=True, default=str)
-        return hashlib.md5(dataset_str.encode()).hexdigest()
 
+    # use shared_utils.py
+    # def _generate_dataset_hash(self, dataset_info: Dict[str, Any]) -> str:
+    #     """Generate unique hash for dataset to enable caching"""
+    #     # Remove any DataFrame objects before hashing to avoid serialization issues
+    #     sanitized_info = dataset_info.copy()
+    #     if 'data' in sanitized_info:
+    #         del sanitized_info['data']
+    #     dataset_str = json.dumps(sanitized_info, sort_keys=True, default=str)
+    #     return hashlib.md5(dataset_str.encode()).hexdigest()
 
 
     def analyze_dataset(self, dataset_info: Dict[str, Any]) -> Dict[str, Any]:
@@ -172,26 +184,26 @@ class RuleEngineService:
                     'validation_passed': False
                 }
             }
+    # use shared_utils.py
+    # def _sanitize_dataset_info(self, dataset_info: Dict[str, Any]) -> Dict[str, Any]:
+    #     """Remove any non-serializable objects from dataset info"""
+    #     sanitized = dataset_info.copy()
+        
+    #     # Remove DataFrame objects and other non-serializable items
+    #     keys_to_remove = []
+    #     for key, value in sanitized.items():
+    #         if hasattr(value, '__class__') and 'DataFrame' in str(value.__class__):
+    #             keys_to_remove.append(key)
+    #         elif hasattr(value, 'dtypes'):  # Likely a DataFrame
+    #             keys_to_remove.append(key)
+        
+    #     for key in keys_to_remove:
+    #         if key in sanitized:
+    #             logger.debug(f"Removing non-serializable key: {key}")
+    #             del sanitized[key]
+        
+    #     return sanitized
 
-
-    def _sanitize_dataset_info(self, dataset_info: Dict[str, Any]) -> Dict[str, Any]:
-        """Remove any non-serializable objects from dataset info"""
-        sanitized = dataset_info.copy()
-        
-        # Remove DataFrame objects and other non-serializable items
-        keys_to_remove = []
-        for key, value in sanitized.items():
-            if hasattr(value, '__class__') and 'DataFrame' in str(value.__class__):
-                keys_to_remove.append(key)
-            elif hasattr(value, 'dtypes'):  # Likely a DataFrame
-                keys_to_remove.append(key)
-        
-        for key in keys_to_remove:
-            if key in sanitized:
-                logger.debug(f"Removing non-serializable key: {key}")
-                del sanitized[key]
-        
-        return sanitized
 
     def _analyze_model_selection(self, dataset_info: Dict[str, Any], validation_result: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -263,24 +275,25 @@ class RuleEngineService:
         """Get available models from knowledge base"""
         try:
             # Get all models from knowledge base
-            from app.services.knowledge_base_services.core.knowledge_base_service import SupplyChainService as KnowledgeBaseService
-            kb_service = KnowledgeBaseService("supply_chain.db")
-            all_models = kb_service.get_all_models()
-            kb_service.close()
+            from app.repositories.model_repository import get_model_repository
+            repository = get_model_repository()
+            return repository.get_all_active_models()
+            # all_models = kb_service.get_all_models()
+            # kb_service.close()
             
-            if not all_models:
-                logger.warning("No models found in knowledge base")
-                return []
+            # if not all_models:
+            #     logger.warning("No models found in knowledge base")
+            #     return []
             
-            # Filter to active models only
-            active_models = [model for model in all_models if model.get('is_active', True)]
+            # # Filter to active models only
+            # active_models = [model for model in all_models if model.get('is_active', True)]
             
-            if not active_models:
-                logger.warning("No active models found")
-                return []
+            # if not active_models:
+            #     logger.warning("No active models found")
+            #     return []
             
-            logger.info(f"📊 Found {len(active_models)} active models for evaluation")
-            return active_models
+            # logger.info(f"📊 Found {len(active_models)} active models for evaluation")
+            # return active_models
             
         except Exception as e:
             logger.error(f"❌ Error getting available models: {e}")
@@ -448,15 +461,6 @@ class RuleEngineService:
                         score += 20
                         reasons.append("Sufficient data for Prophet")
                 
-                # Rule 2: ARIMA for univariate time series
-                elif model_name == 'ARIMA':
-                    if len(columns) <= 3:
-                        score += 25
-                        reasons.append("Good for simple time series")
-                    if row_count >= 30:
-                        score += 15
-                        reasons.append("Adequate data for ARIMA")
-                
                 # Rule 3: LightGBM for feature-rich datasets
                 elif model_name == 'LightGBM':
                     if len(columns) > 3:
@@ -499,8 +503,6 @@ class RuleEngineService:
         except Exception as e:
             logger.error(f"Error generating recommendations: {e}")
             return []
-
-
 
     def validate_dataset(self, dataset_info: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -569,33 +571,37 @@ class RuleEngineService:
                 'error': str(e)
             }
     
-    def _safe_json_load(self, json_str: str) -> Dict[str, Any]:
-        """Safely load JSON string with error handling"""
-        try:
-            if isinstance(json_str, str):
-                return json.loads(json_str)
-            elif isinstance(json_str, dict):
-                return json_str
-            else:
-                return {}
-        except:
-            return {}
+    # use shared_utils.py 
+    # def _safe_json_load(self, json_str: str) -> Dict[str, Any]:
+    #     """Safely load JSON string with error handling"""
+    #     try:
+    #         if isinstance(json_str, str):
+    #             return json.loads(json_str)
+    #         elif isinstance(json_str, dict):
+    #             return json_str
+    #         else:
+    #             return {}
+    #     except:
+    #         return {}
 
-    def _parse_required_features(self, features_data) -> List[str]:
-        """Parse required features from various formats"""
-        if isinstance(features_data, str):
-            try:
-                # Handle string representation of list
-                if features_data.startswith('[') and features_data.endswith(']'):
-                    return eval(features_data)
-                else:
-                    return [features_data]
-            except:
-                return []
-        elif isinstance(features_data, list):
-            return features_data
-        else:
-            return []
+
+    # use shared_utils.py 
+    # def _parse_required_features(self, features_data) -> List[str]:
+    #     """Parse required features from various formats"""
+    #     if isinstance(features_data, str):
+    #         try:
+    #             # Handle string representation of list
+    #             if features_data.startswith('[') and features_data.endswith(']'):
+    #                 return eval(features_data)
+    #             else:
+    #                 return [features_data]
+    #         except:
+    #             return []
+    #     elif isinstance(features_data, list):
+    #         return features_data
+    #     else:
+    #         return []
+
 
     def _generate_comprehensive_recommendations(self, validation_result: Dict[str, Any],
                                             selection_analysis: Dict[str, Any],
@@ -663,7 +669,7 @@ class RuleEngineService:
                 'category': 'feature_engineering',
                 'message': 'Time series data detected but no date column',
                 'action': 'Add a date column for time series forecasting',
-                'impact': 'Enable time series models like Prophet, ARIMA'
+                'impact': 'Enable time series models like Prophet'
             })
         
         return recommendations
@@ -895,13 +901,6 @@ class RuleEngineService:
         
         return result
 
-    # def clear_cache(self):
-    #     """Clear all cached data"""
-    #     self._analysis_cache.clear()
-    #     self._compatibility_cache.clear()
-    #     self._model_cache = None
-    #     logger.info("✅ Cleared all rule engine caches")
-
     def get_cache_stats(self) -> Dict[str, Any]:
         """Get cache statistics"""
         try:
@@ -939,6 +938,7 @@ class RuleEngineService:
                 
         except Exception as e:
             logger.error(f"❌ Error clearing cache: {e}")
+
 
 class MinimalRuleEngine:
     """
@@ -1042,6 +1042,7 @@ class MinimalRuleEngine:
             'reason': 'No matching model found'
         }
     
+
     def _evaluate_simple_condition(self, condition: str, dataset_info: Dict[str, Any]) -> bool:
         """Simple condition evaluator"""
         if not condition:
@@ -1062,15 +1063,15 @@ class MinimalRuleEngine:
         except Exception as e:
             logger.debug(f"Condition evaluation failed: {e}")
             return False
-    
-    def _extract_model_name(self, action: str) -> str:
-        """Extract model name from action string"""
-        if "model_name =" in action:
-            import re
-            match = re.search(r"model_name\s*=\s*['\"]([^'\"]+)['\"]", action)
-            if match:
-                return match.group(1)
-        return ""
+    # use shared_utils.py
+    # def _extract_model_name(self, action: str) -> str:
+    #     """Extract model name from action string"""
+    #     if "model_name =" in action:
+    #         import re
+    #         match = re.search(r"model_name\s*=\s*['\"]([^'\"]+)['\"]", action)
+    #         if match:
+    #             return match.group(1)
+    #     return ""
 
 
 def demo_enhanced_rule_engine():

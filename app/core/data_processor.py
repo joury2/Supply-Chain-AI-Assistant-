@@ -14,7 +14,7 @@ class DataProcessor:
     
     def __init__(self):
         logger.info("✅ Data Processor initialized")
-        self.supported_models = ['ARIMA', 'Prophet', 'LightGBM', 'TFT', 'LSTM']
+        self.supported_models = ['Prophet', 'LightGBM', 'XGBoost', 'LSTM']
     
     def prepare_data(self, data_input: Union[pd.DataFrame, Dict[str, Any]], model_name: str) -> Dict[str, Any]:
         """
@@ -56,9 +56,9 @@ class DataProcessor:
             df_clean = df_clean.sort_values(date_col).reset_index(drop=True)
             
             # Step 5: Model-specific preparation
-            if model_name in ['ARIMA', 'Prophet']:
+            if model_name in ['Prophet']:
                 processed = self._prepare_for_statistical_models(df_clean, date_col, target_col, model_name)
-            elif model_name in ['LightGBM', 'TFT', 'LSTM']:
+            elif model_name in ['LightGBM', 'XGBoost', 'LSTM']:
                 processed = self._prepare_for_ml_models(df_clean, date_col, target_col, model_name)
             else:
                 logger.warning(f"Unknown model type: {model_name}, using generic preparation")
@@ -203,20 +203,14 @@ class DataProcessor:
     
     def _prepare_for_statistical_models(self, df: pd.DataFrame, date_col: str, 
                                        target_col: str, model_name: str) -> Dict[str, Any]:
-        """Prepare data for ARIMA/Prophet models"""
+        """Prepare data for Prophet models"""
         
-        # These models typically need simple format
-        if model_name == 'Prophet':
-            # Prophet expects 'ds' (datestamp) and 'y' (value)
-            prepared_df = pd.DataFrame({
-                'ds': df[date_col],
-                'y': df[target_col]
-            })
-            logger.info("📊 Prepared data for Prophet model")
-        else:  # ARIMA
-            # ARIMA works with time series array
-            prepared_df = df[[date_col, target_col]].copy()
-            logger.info("📊 Prepared data for ARIMA model")
+        # Prophet expects 'ds' (datestamp) and 'y' (value)
+        prepared_df = pd.DataFrame({
+            'ds': df[date_col],
+            'y': df[target_col]
+        })
+        logger.info("📊 Prepared data for Prophet model")
         
         return {
             'status': 'processed',
@@ -233,7 +227,7 @@ class DataProcessor:
     
     def _prepare_for_ml_models(self, df: pd.DataFrame, date_col: str, 
                                target_col: str, model_name: str) -> Dict[str, Any]:
-        """Prepare data for ML models (LightGBM, TFT, LSTM)"""
+        """Prepare data for ML models (LightGBM, XGBoost, LSTM)"""
         
         # ML models need feature engineering
         df_features = df.copy()

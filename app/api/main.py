@@ -1,7 +1,6 @@
-# app/api/main.py
 """
 Production FastAPI Backend for AI Forecasting System
-FIXED: Import paths and module structure
+FIXED: Import paths, duplicate endpoints, and initialization order
 """
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, BackgroundTasks, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,7 +17,7 @@ from datetime import datetime, timedelta
 import asyncio
 from pathlib import Path
 import jwt
-from datetime import datetime, timedelta
+from app.services.llm.simplified_forecast_agent import SimplifiedForecastAgent
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -34,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 # API Configuration
 EXPECTED_API_TOKEN = os.getenv("FASTAPI_API_TOKEN", "forecasting-api-token-v1")
+SECRET_KEY = os.getenv("JWT_SECRET", "fallback-secret-key")
 
 # Initialize FastAPI
 app = FastAPI(
@@ -43,6 +43,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
 
 # CORS middleware
 app.add_middleware(
@@ -61,8 +62,11 @@ sessions = {}  # session_id -> {agent, dataset, created_at, user_id}
 forecast_jobs = {}  # job_id -> {status, result, created_at}
 rate_limit_store = {}  # user_id -> {count, reset_time}
 
+# Global agent instance
+agent = None
+
 # ============================================================================
-# Pydantic Models
+# Pydantic Models - MUST BE DEFINED BEFORE ENDPOINTS
 # ============================================================================
 
 class SessionInfo(BaseModel):
@@ -187,8 +191,76 @@ def get_session(session_id: str):
         )
     return sessions[session_id]
 
+def infer_schema_from_dataframe(df: pd.DataFrame, schema_name: str) -> Dict[str, Any]:
+    """Infer schema from DataFrame for KnowledgeBaseService registration"""
+    
+    # Detect date column
+    date_col = None
+    for col in df.columns:
+        if 'date' in col.lower() or df[col].dtype == 'datetime64[ns]':
+            date_col = col
+            break
+    
+    # Detect target variable
+    target_col = None
+    target_keywords = ['sales', 'demand', 'revenue', 'quantity', 'value', 'target']
+    for keyword in target_keywords:
+        matches = [col for col in df.columns if keyword in col.lower()]
+        if matches:
+            target_col = matches[0]
+            break
+    
+    # If no target found, use first numeric column
+    if not target_col:
+        for col in df.columns:
+            if pd.api.types.is_numeric_dtype(df[col]) and col != date_col:
+                target_col = col
+                break
+    
+    # Create column definitions in the format KnowledgeBaseService expects
+    columns = []
+    for col in df.columns:
+        col_info = {
+            'name': col,
+            'data_type': _infer_pandas_dtype(df[col]),
+            'role': _infer_column_role(col, target_col, date_col),
+            'requirement_level': 'required' if col in [date_col, target_col] else 'optional',
+            'description': f"Column {col} from user upload"
+        }
+        columns.append(col_info)
+    
+    return {
+        'dataset_name': schema_name,
+        'description': f"Temporary schema for session {schema_name}",
+        'min_rows': max(30, len(df) // 2),  # Reasonable minimum
+        'source_path': f"session_upload_{schema_name}",
+        'columns': columns
+    }
+
+def _infer_pandas_dtype(series: pd.Series) -> str:
+    """Infer data type from pandas series"""
+    if pd.api.types.is_datetime64_any_dtype(series):
+        return 'datetime'
+    elif pd.api.types.is_numeric_dtype(series):
+        return 'numeric'
+    elif pd.api.types.is_string_dtype(series):
+        return 'string'
+    else:
+        return 'unknown'
+
+def _infer_column_role(column_name: str, target_col: str, date_col: str) -> str:
+    """Infer column role"""
+    if column_name == target_col:
+        return 'target'
+    elif column_name == date_col:
+        return 'timestamp'
+    elif any(keyword in column_name.lower() for keyword in ['id', 'key', 'code']):
+        return 'identifier'
+    else:
+        return 'feature'
+
 # ============================================================================
-# API Endpoints
+# API Endpoints - AFTER Models are defined
 # ============================================================================
 
 @app.get("/", response_model=HealthResponse)
@@ -251,16 +323,17 @@ async def list_sessions(user_id: str = Depends(verify_token)):
     
     return session_list
 
+
 @app.post("/api/v1/upload", response_model=DatasetUploadResponse)
 async def upload_dataset(
     file: UploadFile = File(...),
     user_id: str = Depends(verify_token)
 ):
-    """Upload dataset"""
+    """Upload dataset - FIXED VERSION"""
     check_rate_limit(user_id)
     
     try:
-        # Read file
+        # Read file FIRST
         contents = await file.read()
         
         if file.filename.endswith('.csv'):
@@ -268,10 +341,7 @@ async def upload_dataset(
         elif file.filename.endswith(('.xlsx', '.xls')):
             df = pd.read_excel(io.BytesIO(contents))
         else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Unsupported file format"
-            )
+            raise HTTPException(400, "Unsupported file format")
         
         # Parse dates
         for col in df.columns:
@@ -281,66 +351,113 @@ async def upload_dataset(
                 except:
                     pass
         
-        # Initialize agent
-        from app.services.llm.simplified_forecast_agent import SimplifiedForecastAgent
+        # Create session AFTER we have the data
+        session_id = str(uuid.uuid4())
         
+        # 🆕 NOW register schema (variables are defined)
+        schema_name = f"temp_session_{session_id}"
+        logger.info(f"🔄 Attempting to register schema: {schema_name}")
+
+        schema = infer_schema_from_dataframe(df, schema_name)
+        
+        from app.services.knowledge_base_services.core.knowledge_base_service import SupplyChainService
+        kb_service = SupplyChainService()
+
+        # 🆕 VERIFY SCHEMA REGISTRATION
+        schema_name = f"temp_session_{session_id}"
+        logger.info(f"🔄 Attempting to register schema: {schema_name}")
+
+        schema = infer_schema_from_dataframe(df, schema_name)
+        kb_service = SupplyChainService()
+
+        if hasattr(kb_service, 'register_dataset_schema'):
+            success = kb_service.register_dataset_schema(schema_name, schema)
+            logger.info(f"📝 Schema registration result: {success}")
+            
+            # 🆕 VERIFY IT WAS ACTUALLY CREATED
+            verify_schema = kb_service.get_dataset_schema(schema_name)
+            if verify_schema:
+                logger.info(f"✅ Schema verification: FOUND with {len(verify_schema.get('columns', []))} columns")
+            else:
+                logger.error(f"❌ Schema verification: NOT FOUND - registration failed!")
+        else:
+            logger.error("❌ register_dataset_schema method not found!")
+            success = False
+
+
+        # 🆕 Debug: Check if method exists
+        if hasattr(kb_service, 'register_dataset_schema'):
+            success = kb_service.register_dataset_schema(schema_name, schema)
+            logger.info(f"📝 Schema registration result: {success}")
+            
+            # 🆕 Verify it was actually created
+            verify_schema = kb_service.get_dataset_schema(schema_name)
+            logger.info(f"🔍 Schema verification: {'FOUND' if verify_schema else 'NOT FOUND'}")
+
+            # 🆕 Store KB service for cleanup
+            kb_service_for_cleanup = kb_service
+        else:
+            logger.error("❌ register_dataset_schema method not found!")
+            success = False
+            kb_service_for_cleanup = None
+
+        # Initialize agent for this session
         nvidia_api_key = os.getenv("NVIDIA_API_KEY")
         if not nvidia_api_key:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="NVIDIA_API_KEY not configured"
-            )
+            raise HTTPException(500, "NVIDIA_API_KEY not configured")
         
-        agent = SimplifiedForecastAgent(nvidia_api_key=nvidia_api_key)
-        agent.upload_dataset(df)
-        
-        # Create session
-        session_id = str(uuid.uuid4())
+        # Create agent instance for this session
+        session_agent = SimplifiedForecastAgent(nvidia_api_key=nvidia_api_key)
+        session_agent.upload_dataset(df)
+        session_agent.session_id = session_id  # 🆕 Pass session ID to agent
+
+        # Store session WITH schema info for cleanup
         sessions[session_id] = {
-            'agent': agent,
+            'agent': session_agent,
             'dataset': df,
+            'schema_name': schema_name,  # Store for cleanup
+            'kb_service': kb_service_for_cleanup,  # Store service instance
             'created_at': datetime.now(),
             'user_id': user_id
         }
         
-        frequency = agent._detect_frequency()
+        frequency = session_agent._detect_frequency()
         
-        logger.info(f"✅ Dataset uploaded: {len(df)} rows, session: {session_id}")
+        logger.info(f"✅ Dataset uploaded + schema registered: {len(df)} rows, session: {session_id}")
         
         return DatasetUploadResponse(
             session_id=session_id,
             rows=len(df),
             columns=list(df.columns),
             frequency=frequency,
-            message="Dataset uploaded successfully"
+            message="Dataset uploaded with schema registration"
         )
         
     except Exception as e:
-        logger.error(f"❌ Upload failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
-    except pd.errors.EmptyDataError:
-        raise HTTPException(400, "File is empty")
-    except pd.errors.ParserError:
-        raise HTTPException(400, "Cannot parse file")
-    except Exception as e:
         logger.error(f"Upload failed: {e}")
-        raise HTTPException(500, "Upload failed")
-    
-    
+        raise HTTPException(500, f"Upload failed: {str(e)}")
+
 @app.post("/api/v1/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
     user_id: str = Depends(verify_token)
 ):
-    """Chat with AI"""
+    """Chat with AI - SINGLE ENDPOINT VERSION"""
     check_rate_limit(user_id, limit=200)
     
     try:
         session = get_session(request.session_id)
         agent = session['agent']
+        
+        # FIX C: Ensure agent has dataset attached (defensive - restore if lost)
+        if getattr(agent, 'current_dataset_df', None) is None and session.get('dataset') is not None:
+            try:
+                agent.upload_dataset(session['dataset'])
+                logger.info(f"🔄 Reattached dataset to agent for session {request.session_id}")
+            except Exception as e:
+                # fallback: set attribute directly if upload_dataset has side-effects
+                agent.current_dataset_df = session['dataset']
+                logger.info(f"🔄 Set dataset directly on agent for session {request.session_id}")
         
         response = agent.ask_question(request.message)
         
@@ -366,7 +483,7 @@ async def chat(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
-
+    
 @app.post("/api/v1/analyze", response_model=AnalysisResponse)
 async def analyze_dataset(
     request: AnalysisRequest,
@@ -453,6 +570,7 @@ async def forecast(
             detail=str(e)
         )
 
+
 @app.get("/api/v1/forecast/status/{job_id}", response_model=JobStatusResponse)
 async def get_forecast_status(
     job_id: str,
@@ -480,29 +598,42 @@ async def delete_session(
     session_id: str,
     user_id: str = Depends(verify_token)
 ):
-    """Delete session"""
+    """Delete session + CLEANUP TEMPORARY SCHEMA"""
     try:
         session = get_session(session_id)
         
+        # 🆕 Cleanup temporary schema
+        schema_name = session.get('schema_name')
+        kb_service = session.get('kb_service')
+        
+        if schema_name and schema_name.startswith('temp_session_') and kb_service:
+            try:
+                success = kb_service.delete_dataset_schema(schema_name)
+                if success:
+                    logger.info(f"🧹 Cleaned up temporary schema: {schema_name}")
+                else:
+                    logger.warning(f"⚠️ Schema cleanup failed: {schema_name}")
+            except Exception as e:
+                logger.warning(f"Schema cleanup error: {e}")
+        
+        # Close agent
         try:
             session['agent'].close()
         except:
             pass
         
+        # Remove session
         del sessions[session_id]
         
-        logger.info(f"✅ Session deleted: {session_id}")
-        return {"message": "Session deleted"}
+        logger.info(f"✅ Session deleted + schema cleaned: {session_id}")
+        return {"message": "Session deleted and schema cleaned"}
         
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"❌ Delete session error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
-
+        raise HTTPException(500, f"Delete failed: {str(e)}")
+     
 # ============================================================================
 # Background Tasks
 # ============================================================================

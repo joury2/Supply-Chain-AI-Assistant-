@@ -145,10 +145,6 @@ Common requirements:
                 "content": """
 Choosing the right forecasting model:
 
-ARIMA: Best for univariate time series with clear trends/seasonality
-- Requires: Regular intervals, minimum 50 observations
-- Use when: Simple patterns, no external variables
-
 Prophet: Good for daily data with strong seasonality
 - Requires: Date column, minimum 2+ seasonality cycles
 - Use when: Multiple seasonality, holidays matter
@@ -156,6 +152,14 @@ Prophet: Good for daily data with strong seasonality
 LightGBM: Best for complex patterns with many features
 - Requires: Multiple features, sufficient data (100+ rows)
 - Use when: Non-linear patterns, feature engineering available
+
+LSTM: Useful for capturing sequential dependencies in rich datasets
+- Requires: Longer history, normalized features, sequential windows
+- Use when: Long-term temporal relationships matter
+
+XGBoost: Powerful gradient boosting for structured data
+- Requires: Clean features, careful tuning
+- Use when: Strong tabular patterns exist
 
 TFT (Temporal Fusion Transformer): Advanced neural network
 - Requires: Large datasets (1000+ observations), multiple features

@@ -1,0 +1,376 @@
+{
+  "schema_id": "xgboost_numberofpieces_input_schema_v1",
+  "name": "XGBoost NumberOfPieces Input Schema",
+  "description": "Data format requirements for XGBoost NumberOfPieces multi-location forecasting model",
+  "version": "1.0",
+  "created_at": "2024-11-06",
+  "required_data_format": {
+    "description": "A CSV or Excel file with transaction-level or daily aggregated supply chain delivery data. Must include date, customer, location, business type, number of pieces, and total revenue.",
+    "file_types": [
+      "csv",
+      "xlsx"
+    ],
+    "aggregation_level": "transaction_level_or_daily",
+    "minimum_history": "12_months_recommended_for_seasonal_patterns",
+    "required_columns": [
+      {
+        "name": [
+          "WorkDate",
+          "Date",
+          "date"
+        ],
+        "type": "datetime",
+        "purpose": "time_index",
+        "required": true,
+        "format": "YYYY-MM-DD or standard datetime format",
+        "notes": "The date column for the transactions. Will be automatically aggregated to monthly level. Used to extract temporal features (year, month, quarter).",
+        "examples": [
+          "2024-01-15",
+          "2024-12-31",
+          "2022-06-01"
+        ]
+      },
+      {
+        "name": [
+          "Customer",
+          "customer",
+          "client"
+        ],
+        "type": "string (categorical)",
+        "purpose": "identifier_and_feature",
+        "required": true,
+        "notes": "Customer name or ID. Model learns patterns per customer. Unknown customers during prediction will use general patterns but may have reduced accuracy.",
+        "examples": [
+          "Aramex",
+          "DHL",
+          "FedEx",
+          "UPS",
+          "Local Courier"
+        ]
+      },
+      {
+        "name": [
+          "Location",
+          "location",
+          "city",
+          "store"
+        ],
+        "type": "string (categorical)",
+        "purpose": "identifier_and_feature",
+        "required": true,
+        "notes": "Delivery location, city, or store name. This is the PRIMARY dimension for forecasting. Model creates separate patterns for each location.",
+        "examples": [
+          "Dubai",
+          "Riyadh",
+          "Jeddah",
+          "Dammam",
+          "Mecca"
+        ]
+      },
+      {
+        "name": [
+          "BusinessType",
+          "business_type",
+          "service_type",
+          "delivery_type"
+        ],
+        "type": "string (categorical)",
+        "purpose": "identifier_and_feature",
+        "required": true,
+        "notes": "Type of delivery service or business category. Model learns different patterns per business type.",
+        "examples": [
+          "E-commerce",
+          "B2B",
+          "Retail",
+          "Express",
+          "Standard"
+        ]
+      },
+      {
+        "name": [
+          "NumberOfPieces",
+          "number_of_pieces",
+          "pieces",
+          "quantity"
+        ],
+        "type": "integer",
+        "purpose": "target_variable",
+        "required": true,
+        "validation": {
+          "min_value": 0,
+          "no_negative_values": true
+        },
+        "notes": "Number of pieces/items delivered. This is the TARGET variable that the model predicts. Required for training, not needed for prediction.",
+        "examples": [
+          1000,
+          5000,
+          12500
+        ]
+      },
+      {
+        "name": [
+          "TotalRevenue",
+          "total_revenue",
+          "revenue",
+          "sales"
+        ],
+        "type": "numeric (float/integer)",
+        "purpose": "exogenous_feature",
+        "required": true,
+        "validation": {
+          "min_value": 0,
+          "no_negative_values": true
+        },
+        "notes": "Total revenue for the period. Used as a feature to improve predictions. Correlated with NumberOfPieces.",
+        "examples": [
+          15000.50,
+          25000.00,
+          8500.75
+        ]
+      }
+    ],
+    "auto_generated_features": {
+      "description": "These features are automatically created during model training and prediction. DO NOT include them in your upload.",
+      "temporal_features": [
+        {
+          "name": "month",
+          "type": "integer",
+          "source": "WorkDate (after monthly aggregation)",
+          "range": "1-12",
+          "purpose": "Captures monthly seasonality"
+        },
+        {
+          "name": "quarter",
+          "type": "integer",
+          "source": "WorkDate (after monthly aggregation)",
+          "range": "1-4",
+          "purpose": "Captures quarterly patterns"
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "source": "WorkDate (after monthly aggregation)",
+          "purpose": "Captures year-over-year trends"
+        }
+      ],
+      "lag_features": [
+        {
+          "name": "lag_1",
+          "type": "float",
+          "description": "NumberOfPieces from 1 month ago",
+          "purpose": "Recent history pattern"
+        },
+        {
+          "name": "lag_3",
+          "type": "float",
+          "description": "NumberOfPieces from 3 months ago",
+          "purpose": "Medium-term trend"
+        },
+        {
+          "name": "lag_6",
+          "type": "float",
+          "description": "NumberOfPieces from 6 months ago",
+          "purpose": "Long-term trend and seasonality"
+        }
+      ],
+      "rolling_statistics": [
+        {
+          "name": "roll_mean_3",
+          "type": "float",
+          "description": "Average of last 3 months",
+          "purpose": "Short-term trend"
+        },
+        {
+          "name": "roll_std_3",
+          "type": "float",
+          "description": "Standard deviation of last 3 months",
+          "purpose": "Short-term volatility"
+        },
+        {
+          "name": "roll_mean_6",
+          "type": "float",
+          "description": "Average of last 6 months",
+          "purpose": "Medium-term trend"
+        },
+        {
+          "name": "roll_std_6",
+          "type": "float",
+          "description": "Standard deviation of last 6 months",
+          "purpose": "Medium-term volatility"
+        },
+        {
+          "name": "roll_mean_12",
+          "type": "float",
+          "description": "Average of last 12 months",
+          "purpose": "Long-term trend"
+        },
+        {
+          "name": "roll_std_12",
+          "type": "float",
+          "description": "Standard deviation of last 12 months",
+          "purpose": "Long-term volatility"
+        }
+      ],
+      "note": "All features are calculated PER Customer-Location combination to maintain data integrity"
+    },
+    "target_variable": {
+      "name": "NumberOfPieces",
+      "type": "integer",
+      "purpose": "prediction_target",
+      "required_for_training": true,
+      "required_for_prediction": false,
+      "notes": "This is what the model predicts. Do NOT include in prediction requests. Model predicts next month's value.",
+      "transformation": "none_raw_values_used"
+    }
+  },
+  "data_aggregation_process": {
+    "description": "Model automatically aggregates daily/transaction data to monthly level",
+    "aggregation_rules": {
+      "grouping_keys": [
+        "Customer",
+        "Location",
+        "BusinessType",
+        "YearMonth"
+      ],
+      "aggregation_method": {
+        "NumberOfPieces": "sum",
+        "TotalRevenue": "sum"
+      },
+      "note": "Each Customer-Location-BusinessType-Month combination gets ONE row after aggregation"
+    },
+    "example": {
+      "before_aggregation": "Daily records: Jan 1 (100 pieces), Jan 2 (95 pieces), Jan 3 (110 pieces)...",
+      "after_aggregation": "Monthly record: January 2024 (3,450 pieces total)"
+    }
+  },
+  "data_validation_rules": {
+    "date_validation": {
+      "no_future_dates_in_training": true,
+      "no_null_dates": true,
+      "date_range_check": "Must be within reasonable range (2000-2100)",
+      "minimum_history": "At least 12 months recommended for seasonal patterns"
+    },
+    "numeric_validation": {
+      "NumberOfPieces": {
+        "min": 0,
+        "max": 1000000,
+        "no_nulls": true,
+        "type": "integer or float (will be summed)"
+      },
+      "TotalRevenue": {
+        "min": 0,
+        "max": 10000000,
+        "no_nulls": true,
+        "type": "numeric"
+      }
+    },
+    "categorical_validation": {
+      "Customer": {
+        "no_nulls": true,
+        "handle_unknown": "uses_onehot_encoding_ignore"
+      },
+      "Location": {
+        "no_nulls": true,
+        "handle_unknown": "uses_onehot_encoding_ignore",
+        "note": "PRIMARY forecasting dimension"
+      },
+      "BusinessType": {
+        "no_nulls": true,
+        "handle_unknown": "uses_onehot_encoding_ignore"
+      }
+    },
+    "duplicate_validation": {
+      "check": "After aggregation, no duplicate Customer-Location-Month combinations",
+      "action": "Model verifies this automatically during training"
+    }
+  },
+  "example_input_data": {
+    "csv_format": "WorkDate,Customer,Location,BusinessType,NumberOfPieces,TotalRevenue\n2024-01-15,Aramex,Dubai,E-commerce,1000,15000.50\n2024-01-16,DHL,Riyadh,B2B,1500,22000.00\n2024-01-17,FedEx,Jeddah,Retail,800,12500.75",
+    "json_format": [
+      {
+        "WorkDate": "2024-01-15",
+        "Customer": "Aramex",
+        "Location": "Dubai",
+        "BusinessType": "E-commerce",
+        "NumberOfPieces": 1000,
+        "TotalRevenue": 15000.50
+      },
+      {
+        "WorkDate": "2024-01-16",
+        "Customer": "DHL",
+        "Location": "Riyadh",
+        "BusinessType": "B2B",
+        "NumberOfPieces": 1500,
+        "TotalRevenue": 22000.00
+      }
+    ]
+  },
+  "prediction_input_format": {
+    "description": "For predictions, model uses LAST KNOWN values for each location to generate features",
+    "required_for_prediction": [
+      "Select desired location(s) from trained locations"
+    ],
+    "automatic_feature_generation": "Model automatically creates lag and rolling features from historical data",
+    "user_action": "Simply select location(s) and click predict - all features generated automatically"
+  },
+  "known_categories": {
+    "description": "Categories seen during training. Model works best with these. Unknown categories are handled but may reduce accuracy.",
+    "note": "Your actual categories will depend on your training data. Update this section after training.",
+    "example_customers": [
+      "Aramex",
+      "DHL",
+      "FedEx",
+      "UPS",
+      "TNT",
+      "Local Courier",
+      "Express Delivery",
+      "Standard Shipping",
+      "International",
+      "Domestic"
+    ],
+    "example_locations": [
+      "Dubai",
+      "Riyadh",
+      "Jeddah",
+      "Dammam",
+      "Mecca",
+      "Medina",
+      "Khobar",
+      "Tabuk",
+      "Buraidah",
+      "Khamis Mushait",
+      "Hofuf",
+      "Mubarraz",
+      "Hafar Al-Batin",
+      "Jubail",
+      "Dhahran",
+      "Yanbu",
+      "Abha"
+    ],
+    "example_business_types": [
+      "E-commerce",
+      "B2B",
+      "Retail"
+    ]
+  },
+  "forecasting_workflow": {
+    "training_phase": [
+      "1. Upload historical data (CSV/Excel) with all required columns",
+      "2. Model aggregates daily data to monthly level",
+      "3. Groups by Customer + Location + BusinessType + Month",
+      "4. Creates lag features (1, 3, 6 months) per group",
+      "5. Creates rolling statistics (3, 6, 12 months) per group",
+      "6. Splits data 80% training / 20% testing (time-based)",
+      "7. Trains XGBoost model with 200 trees",
+      "8. Validates on test set and reports accuracy metrics"
+    ],
+    "prediction_phase": [
+      "1. User selects one or multiple locations",
+      "2. Model retrieves last known data for each location",
+      "3. Automatically calculates all lag and rolling features",
+      "4. Generates next month prediction",
+      "5. Returns prediction with change % from last month",
+      "6. Displays comparison charts and trends"
+    ]
+  }
+}

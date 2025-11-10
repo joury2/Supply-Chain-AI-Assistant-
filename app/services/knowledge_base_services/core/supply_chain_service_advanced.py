@@ -592,6 +592,7 @@ class SupplyChainForecastingService:
         
         return min(confidence, 1.0)
     
+    
     def _select_best_model(self, analysis_result: Dict[str, Any], dataset_info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Select best model combining rule engine and knowledge base recommendations"""
         rule_model = analysis_result['rule_analysis']['model_selection']

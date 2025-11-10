@@ -1,0 +1,17 @@
+CREATE TABLE ML_Models (
+    model_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    model_name TEXT NOT NULL,
+    model_type TEXT,
+    model_path TEXT NOT NULL,
+    required_features TEXT NOT NULL,
+    optional_features TEXT,
+    target_variable TEXT NOT NULL,
+    performance_metrics TEXT,
+    training_config TEXT,
+    dataset_id INTEGER REFERENCES Dataset_Schemas(dataset_id),
+    hyperparameters TEXT,
+    best_for TEXT, 
+    not_recommended_for TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

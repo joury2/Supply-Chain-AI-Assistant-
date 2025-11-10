@@ -1,0 +1,1336 @@
+================================================================================
+🔍 DUPLICATE FUNCTION ANALYSIS REPORT
+================================================================================
+
+🔴 EXACT DUPLICATES (100% identical)
+--------------------------------------------------------------------------------
+
+Function: __init__()
+   Defined in 2 locations:
+      • knowledge_base/relational_kb/sqlite_manager.py:16
+      • services/model_serving/model_registry_service.py:23
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/knowledge_base/relational_kb/sqlite_manager.py
+
+Function: _calculate_compatibility_score()
+   Defined in 3 locations:
+      • services/knowledge_base_services/core/knowledge_base_service.py:227
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:667
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:489
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/knowledge_base_service.py
+
+Function: _calculate_kb_confidence()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_advanced.py:570
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:686
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_advanced.py
+
+Function: _combine_analyses()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:800
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:803
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _create_agent()
+   Defined in 2 locations:
+      • services/llm/forecast_agent.py:770
+      • services/llm/simplified_forecast_agent.py:740
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/llm/forecast_agent.py
+
+Function: _create_dataset_info()
+   Defined in 2 locations:
+      • services/llm/forecast_agent.py:153
+      • services/llm/simplified_forecast_agent.py:690
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/llm/forecast_agent.py
+
+Function: _create_error_response()
+   Defined in 3 locations:
+      • services/knowledge_base_services/core/supply_chain_service_advanced.py:878
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:143
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:943
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_advanced.py
+
+Function: _create_fallback_analysis()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:772
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:430
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _create_fallback_recommendations()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:596
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:613
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _create_low_confidence_response()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:509
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:857
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _create_model_loading_failed_response()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:578
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:926
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _create_model_selection_failed_response()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:561
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:909
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _create_no_models_response()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:707
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:959
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _create_recommendations_with_primary()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:440
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:454
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _create_rule_summary()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:754
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:774
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _create_success_response()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:895
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:990
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _create_validation_failed_response()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:527
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:875
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _create_validation_failed_response_from_analysis()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:544
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:892
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _find_most_compatible_model()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:647
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:528
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _format_model_selection()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:739
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:759
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _generate_cache_key()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/knowledge_base_service.py:63
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:59
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/knowledge_base_service.py
+
+Function: _get_knowledge_base_recommendations()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_advanced.py:534
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:284
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_advanced.py
+
+Function: _identify_primary_issue()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:825
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:791
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _infer_target_variable()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:232
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:712
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _load_vectorstore()
+   Defined in 2 locations:
+      • services/llm/forecast_agent.py:87
+      • services/llm/simplified_forecast_agent.py:720
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/llm/forecast_agent.py
+
+Function: _model_info_to_metadata()
+   Defined in 2 locations:
+      • services/inference/model_inference_service.py:222
+      • services/inference/model_inference_service_v1.py:228
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/inference/model_inference_service.py
+
+Function: _select_best_model()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:476
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:827
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: _validate_with_knowledge_base()
+   Defined in 3 locations:
+      • services/knowledge_base_services/core/supply_chain_service_advanced.py:511
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:261
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:663
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_advanced.py
+
+Function: analyze_dataset_tool()
+   Defined in 2 locations:
+      • services/llm/forecast_agent.py:185
+      • services/llm/simplified_forecast_agent.py:108
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/llm/forecast_agent.py
+
+Function: clear_cache()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:914
+      • services/knowledge_base_services/core/supply_chain_service_v3.py:1284
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_v2.py
+
+Function: close()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_advanced.py:896
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:919
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_advanced.py
+
+Function: compare_scenarios_tool()
+   Defined in 2 locations:
+      • services/llm/forecast_agent.py:484
+      • services/llm/simplified_forecast_agent.py:407
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/llm/forecast_agent.py
+
+Function: explain_model_choice_tool()
+   Defined in 2 locations:
+      • services/llm/forecast_agent.py:542
+      • services/llm/simplified_forecast_agent.py:465
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/llm/forecast_agent.py
+
+Function: explain_results_tool()
+   Defined in 2 locations:
+      • services/llm/forecast_agent.py:335
+      • services/llm/simplified_forecast_agent.py:258
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/llm/forecast_agent.py
+
+Function: generate_forecast()
+   Defined in 2 locations:
+      • services/inference/model_inference_service.py:175
+      • services/inference/model_inference_service_v1.py:181
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/inference/model_inference_service.py
+
+Function: get_diagnostics()
+   Defined in 2 locations:
+      • services/inference/model_inference_service.py:268
+      • services/inference/model_inference_service_v1.py:274
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/inference/model_inference_service.py
+
+Function: get_forecast_data_tool()
+   Defined in 2 locations:
+      • services/llm/forecast_agent.py:361
+      • services/llm/simplified_forecast_agent.py:284
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/llm/forecast_agent.py
+
+Function: get_model_capabilities()
+   Defined in 2 locations:
+      • services/inference/model_inference_service.py:201
+      • services/inference/model_inference_service_v1.py:207
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/inference/model_inference_service.py
+
+Function: get_model_details_tool()
+   Defined in 2 locations:
+      • services/llm/forecast_agent.py:321
+      • services/llm/simplified_forecast_agent.py:244
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/llm/forecast_agent.py
+
+Function: interpret_forecast_patterns_tool()
+   Defined in 2 locations:
+      • services/llm/forecast_agent.py:387
+      • services/llm/simplified_forecast_agent.py:310
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/llm/forecast_agent.py
+
+Function: is_model_loaded()
+   Defined in 2 locations:
+      • services/inference/model_inference_service.py:208
+      • services/inference/model_inference_service_v1.py:214
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/inference/model_inference_service.py
+
+Function: list_loaded_models()
+   Defined in 2 locations:
+      • services/inference/model_inference_service.py:218
+      • services/inference/model_inference_service_v1.py:224
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/inference/model_inference_service.py
+
+Function: load_model_from_metadata()
+   Defined in 2 locations:
+      • services/inference/model_inference_service.py:55
+      • services/inference/model_inference_service_v1.py:61
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/inference/model_inference_service.py
+
+Function: load_model_from_registry()
+   Defined in 2 locations:
+      • services/inference/model_inference_service.py:139
+      • services/inference/model_inference_service_v1.py:145
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/inference/model_inference_service.py
+
+Function: run_forecast_tool()
+   Defined in 2 locations:
+      • services/llm/forecast_agent.py:238
+      • services/llm/simplified_forecast_agent.py:161
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/llm/forecast_agent.py
+
+Function: set_knowledge_base()
+   Defined in 2 locations:
+      • services/inference/model_inference_service.py:47
+      • services/inference/model_inference_service_v1.py:52
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/inference/model_inference_service.py
+
+Function: suggest_actions_tool()
+   Defined in 2 locations:
+      • services/llm/forecast_agent.py:607
+      • services/llm/simplified_forecast_agent.py:530
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/llm/forecast_agent.py
+
+Function: unload_model()
+   Defined in 2 locations:
+      • services/inference/model_inference_service.py:212
+      • services/inference/model_inference_service_v1.py:218
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/inference/model_inference_service.py
+
+Function: validate_forecasting_request()
+   Defined in 2 locations:
+      • services/knowledge_base_services/core/supply_chain_service_advanced.py:278
+      • services/knowledge_base_services/core/supply_chain_service_v2.py:88
+
+   💡 Solution: Keep ONE implementation, remove others
+      Recommended location: app/services/knowledge_base_services/core/supply_chain_service_advanced.py
+
+
+🟡 SIMILAR FUNCTIONS (80%+ identical)
+--------------------------------------------------------------------------------
+
+Function: _create_tools()
+   Similarity: 100.0%
+   Location 1: services/llm/forecast_agent.py:182
+   Location 2: services/llm/simplified_forecast_agent.py:105
+
+   Differences:
+      -
+      +            
+
+   💡 Solution: Consolidate into single implementation
+
+Function: validate_forecasting_request()
+   Similarity: 99.7%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_advanced.py:278
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:198
+
+   Differences:
+      -        """Validate and sanitize forecasting request inputs"""
+      +        """Validate and sanitize forecasting request inputs - SINGLE VERSION"""
+
+   💡 Solution: Consolidate into single implementation
+
+Function: validate_forecasting_request()
+   Similarity: 99.7%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_v2.py:88
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:198
+
+   Differences:
+      -        """Validate and sanitize forecasting request inputs"""
+      +        """Validate and sanitize forecasting request inputs - SINGLE VERSION"""
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _get_knowledge_base_recommendations()
+   Similarity: 99.2%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_advanced.py:534
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:737
+
+   Differences:
+      -        suitable_models = self.knowledge_base.get_suitable_models(available_features, target_variable)
+      +        suitable_models = self.get_suitable_models(available_features, target_variable)
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _get_knowledge_base_recommendations()
+   Similarity: 99.2%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_v2.py:284
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:737
+
+   Differences:
+      -        suitable_models = self.knowledge_base.get_suitable_models(available_features, target_variable)
+      +        suitable_models = self.get_suitable_models(available_features, target_variable)
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _sanitize_dataset_info()
+   Similarity: 98.9%
+   Location 1: knowledge_base/rule_layer/rule_engine_v1.py:160
+   Location 2: services/knowledge_base_services/core/rule_engine_service.py:174
+
+   Differences:
+      -                logger.debug(f"Removing non-serializable key from dataset_info: {key}")
+      +                logger.debug(f"Removing non-serializable key: {key}")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: clear_cache()
+   Similarity: 98.8%
+   Location 1: services/knowledge_base_services/core/knowledge_base_service.py:494
+   Location 2: services/knowledge_base_services/core/knowledge_base_service_OLD.py:249
+
+   Differences:
+      -        logger.info("✅ Cleared all service caches")
+      +        self.logger.info("✅ Cleared all service caches")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _basic_validation()
+   Similarity: 96.2%
+   Location 1: knowledge_base/rule_layer/rule_engine.py:311
+   Location 2: knowledge_base/rule_layer/rule_engine_v1.py:179
+
+   Differences:
+      +        # Check for required columns
+      -            warnings.append("No obvious target variable found")
+      +            warnings.append("No obvious target variable found (sales, demand, quantity)")
+      -            warnings.append("No date column found")
+      +            warnings.append("No date column found - time series models may not work")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _forecast_result_to_dict()
+   Similarity: 95.0%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:256
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:178
+
+   Differences:
+      -        """Convert ForecastResult to dict"""
+      +        """Convert ForecastResult object to dict format"""
+      -            'timestamp': forecast_result.metadata.get('timestamp', pd.Timestamp.now().isoformat()),
+      +            'timestamp': forecast_result.metadata.get('timestamp', 
+      +                                                     pd.Timestamp.now().isoformat()),
+
+   💡 Solution: Consolidate into single implementation
+
+Function: analyze_dataset_with_knowledge_base()
+   Similarity: 94.2%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:174
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:251
+
+   Differences:
+      -        """Analyze dataset - business logic only"""
+      +        """
+      +        Dataset analysis - BUSINESS LOGIC ONLY - SINGLE VERSION
+      +        No model inference code here!
+      +        """
+
+   💡 Solution: Consolidate into single implementation
+
+Function: validate_dataset()
+   Similarity: 94.0%
+   Location 1: knowledge_base/rule_layer/rule_engine.py:100
+   Location 2: knowledge_base/rule_layer/rule_engine_v1.py:96
+
+   Differences:
+      -        # Sanitize to remove DataFrame objects
+      +        # Sanitize dataset_info to ensure no DataFrame objects
+      +                    elif action == 'ACCEPT':
+      +                        logger.debug(f"Rule '{rule_name}' ACCEPTED: {message}")
+      +                # Add error but don't break the whole validation
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _sanitize_dataset_info()
+   Similarity: 94.0%
+   Location 1: knowledge_base/rule_layer/rule_engine.py:293
+   Location 2: services/knowledge_base_services/core/rule_engine_service.py:174
+
+   Differences:
+      +        # Remove DataFrame objects and other non-serializable items
+      -            elif hasattr(value, 'dtypes'):
+      +            elif hasattr(value, 'dtypes'):  # Likely a DataFrame
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _create_fallback_analysis()
+   Similarity: 93.9%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:524
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v2.py:772
+
+   Differences:
+      -        """Fallback analysis"""
+      +        """Create fallback analysis when real analysis fails"""
+      +        logger.warning("🔄 Using fallback analysis")
+      +        
+      -                    'reason': 'Fallback'
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _create_fallback_analysis()
+   Similarity: 93.9%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:524
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:430
+
+   Differences:
+      -        """Fallback analysis"""
+      +        """Create fallback analysis when real analysis fails"""
+      +        logger.warning("🔄 Using fallback analysis")
+      +        
+      -                    'reason': 'Fallback'
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _sanitize_dataset_info()
+   Similarity: 92.9%
+   Location 1: knowledge_base/rule_layer/rule_engine.py:293
+   Location 2: knowledge_base/rule_layer/rule_engine_v1.py:160
+
+   Differences:
+      +        # Remove DataFrame objects and other non-serializable items
+      -            elif hasattr(value, 'dtypes'):
+      +            elif hasattr(value, 'dtypes'):  # Likely a DataFrame
+      -                logger.debug(f"Removing non-serializable key: {key}")
+      +                logger.debug(f"Removing non-serializable key from dataset_info: {key}")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _load_selection_rules()
+   Similarity: 92.3%
+   Location 1: knowledge_base/rule_layer/rule_engine.py:76
+   Location 2: knowledge_base/rule_layer/rule_engine_v1.py:69
+
+   Differences:
+      +            # Try multiple possible paths
+      +                'knowledge_base/rule_layer/model_selection_rules.yaml',
+      +                '../rule_layer/model_selection_rules.yaml'
+
+   💡 Solution: Consolidate into single implementation
+
+Function: close()
+   Similarity: 91.9%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:652
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:1289
+
+   Differences:
+      -        """Close services"""
+      +        """Close all services"""
+      +        # Unload all models
+      -        logger.info("🔚 Service closed")
+      +        logger.info("🔚 Supply Chain Service closed")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: __init__()
+   Similarity: 91.8%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_advanced.py:49
+   Location 2: services/knowledge_base_services/core/supply_chain_service_advanced.py:59
+
+   Differences:
+      -            logger.info("Mock RuleEngineService initialized")
+      +            logger.info("Mock ModelRegistryService initialized")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: clear_cache()
+   Similarity: 90.8%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:647
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v2.py:914
+
+   Differences:
+      -        """Clear caches"""
+      +        """Clear all caches"""
+      -        logger.info("🧹 Cache cleared")
+      +        logger.info("🧹 Cleared analysis cache")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: clear_cache()
+   Similarity: 90.8%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:647
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:1284
+
+   Differences:
+      -        """Clear caches"""
+      +        """Clear all caches"""
+      -        logger.info("🧹 Cache cleared")
+      +        logger.info("🧹 Cleared analysis cache")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: get_current_forecast_data()
+   Similarity: 88.9%
+   Location 1: services/llm/forecast_agent.py:877
+   Location 2: services/llm/simplified_forecast_agent.py:1308
+
+   Differences:
+      -        """Get current forecast data for visualization"""
+      -        if self.current_result and 'forecast' in self.current_result:
+      -            return self.current_result['forecast']
+      +        """Get forecast data for visualization"""
+      +        try:
+
+   💡 Solution: Consolidate into single implementation
+
+Function: process_forecasting_request()
+   Similarity: 88.7%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:50
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:77
+
+   Differences:
+      -        """Main forecasting pipeline"""
+      +        """
+      +        REFACTORED forecasting pipeline
+      +        Now all model-specific code is in the inference service!
+      +        """
+
+   💡 Solution: Consolidate into single implementation
+
+Function: get_model_by_id()
+   Similarity: 88.5%
+   Location 1: knowledge_base/relational_kb/sqlite_schema.py:92
+   Location 2: services/knowledge_base_services/core/knowledge_base_service_OLD.py:55
+
+   Differences:
+      -        """CRITICAL MISSING METHOD - Get model by ID"""
+      +        """Get model by ID with error handling"""
+      -            logger.error(f"❌ Failed to get model {model_id}: {e}")
+      +            self.logger.error(f"Error getting model {model_id}: {e}")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _load_validation_rules()
+   Similarity: 88.1%
+   Location 1: knowledge_base/rule_layer/rule_engine.py:51
+   Location 2: knowledge_base/rule_layer/rule_engine_v1.py:41
+
+   Differences:
+      -        """Load data validation rules from YAML"""
+      +        """Load data validation rules from YAML with better path resolution"""
+      +            # Get the directory where this script is located
+      -                'app/knowledge_base/rule_layer/data_validation_rules.yaml',
+      +                os.path.join(current_dir, '../rule_layer/data_validation_rules.yaml'),
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _generate_cache_key()
+   Similarity: 88.0%
+   Location 1: services/knowledge_base_services/core/knowledge_base_service.py:63
+   Location 2: services/knowledge_base_services/core/supply_chain_service_advanced.py:244
+
+   Differences:
+      -        """Generate cache key from data dictionary"""
+      -        # Remove non-serializable items
+      +        """
+      +        Generate cache key from data dictionary
+      +        FIXED: Filters out non-serializable items like DataFrames
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _generate_cache_key()
+   Similarity: 88.0%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_advanced.py:244
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v2.py:59
+
+   Differences:
+      -        """
+      -        Generate cache key from data dictionary
+      -        FIXED: Filters out non-serializable items like DataFrames
+      -        """
+      -        # ✅ Remove non-serializable items
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _generate_cache_key()
+   Similarity: 87.9%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:271
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:404
+
+   Differences:
+      -        """Generate cache key"""
+      +        """Generate reproducible cache key for analysis requests."""
+      +        # Use name + columns + row_count + missing_percentage for simplicity
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _find_most_compatible_model()
+   Similarity: 87.8%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:357
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v2.py:647
+
+   Differences:
+      -                                   dataset_info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+      -        """Find most compatible model"""
+      +                                dataset_info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+      +        """Find the most compatible model based on dataset characteristics"""
+      -            score = self._calculate_compatibility_score(model, dataset_info)
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _find_most_compatible_model()
+   Similarity: 87.8%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:357
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:528
+
+   Differences:
+      -                                   dataset_info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+      -        """Find most compatible model"""
+      +                                dataset_info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+      +        """Find the most compatible model based on dataset characteristics"""
+      -            score = self._calculate_compatibility_score(model, dataset_info)
+
+   💡 Solution: Consolidate into single implementation
+
+Function: __init__()
+   Similarity: 87.7%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_advanced.py:49
+   Location 2: services/knowledge_base_services/core/supply_chain_service_advanced.py:72
+
+   Differences:
+      -            logger.info("Mock RuleEngineService initialized")
+      +            logger.info("Mock LLMInterpretationService initialized")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: __init__()
+   Similarity: 86.4%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_advanced.py:49
+   Location 2: services/knowledge_base_services/core/supply_chain_service_advanced.py:65
+
+   Differences:
+      -            logger.info("Mock RuleEngineService initialized")
+      +            logger.info("Mock DataProcessor initialized")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: __init__()
+   Similarity: 86.3%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_advanced.py:59
+   Location 2: services/knowledge_base_services/core/supply_chain_service_advanced.py:72
+
+   Differences:
+      -            logger.info("Mock ModelRegistryService initialized")
+      +            logger.info("Mock LLMInterpretationService initialized")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _format_model_selection()
+   Similarity: 86.0%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:466
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v2.py:739
+
+   Differences:
+      -    def _format_model_selection(self, recommendations: List[Dict[str, Any]]) -> Dict[str, Any]:
+      -        """Format model selection"""
+      -        if not recommendations:
+      +    def _format_model_selection(self, model_recommendations: List[Dict[str, Any]]) -> Dict[str, Any]:
+      +        """Format model recommendations for the expected structure"""
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _format_model_selection()
+   Similarity: 86.0%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:466
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:759
+
+   Differences:
+      -    def _format_model_selection(self, recommendations: List[Dict[str, Any]]) -> Dict[str, Any]:
+      -        """Format model selection"""
+      -        if not recommendations:
+      +    def _format_model_selection(self, model_recommendations: List[Dict[str, Any]]) -> Dict[str, Any]:
+      +        """Format model recommendations for the expected structure"""
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _combine_analyses()
+   Similarity: 85.9%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_advanced.py:678
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v2.py:800
+
+   Differences:
+      -        # Combine recommendations
+      -        all_recommendations = []
+      -        if rule_analysis.get('recommendations'):
+      -            all_recommendations.extend(rule_analysis['recommendations'])
+      -        
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _combine_analyses()
+   Similarity: 85.9%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_advanced.py:678
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:803
+
+   Differences:
+      -        # Combine recommendations
+      -        all_recommendations = []
+      -        if rule_analysis.get('recommendations'):
+      -            all_recommendations.extend(rule_analysis['recommendations'])
+      -        
+
+   💡 Solution: Consolidate into single implementation
+
+Function: clear_cache()
+   Similarity: 85.8%
+   Location 1: repositories/model_repository.py:189
+   Location 2: services/knowledge_base_services/core/supply_chain_service.py:647
+
+   Differences:
+      -        """Clear repository cache"""
+      -        self._cache.clear()
+      -        logger.info("🧹 ModelRepository cache cleared")
+      +        """Clear caches"""
+      +        self._analysis_cache.clear()
+
+   💡 Solution: Consolidate into single implementation
+
+Function: execute_query()
+   Similarity: 85.4%
+   Location 1: knowledge_base/relational_kb/sqlite_manager.py:254
+   Location 2: services/model_serving/model_registry_service.py:34
+
+   Differences:
+      -        """Execute a query and return results as dictionaries"""
+
+   💡 Solution: Consolidate into single implementation
+
+Function: __init__()
+   Similarity: 85.2%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_advanced.py:65
+   Location 2: services/knowledge_base_services/core/supply_chain_service_advanced.py:72
+
+   Differences:
+      -            logger.info("Mock DataProcessor initialized")
+      +            logger.info("Mock LLMInterpretationService initialized")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _identify_primary_issue()
+   Similarity: 85.0%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:515
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v2.py:825
+
+   Differences:
+      -        """Identify primary issue"""
+      +        """Identify the main issue preventing forecasting"""
+      -            return rule_summary.get('primary_issue')
+      +            return rule_summary.get('primary_issue', 'Rule engine validation failed')
+      +        
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _identify_primary_issue()
+   Similarity: 85.0%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:515
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:791
+
+   Differences:
+      -        """Identify primary issue"""
+      +        """Identify the main issue preventing forecasting"""
+      -            return rule_summary.get('primary_issue')
+      +            return rule_summary.get('primary_issue', 'Rule engine validation failed')
+      +        
+
+   💡 Solution: Consolidate into single implementation
+
+Function: __init__()
+   Similarity: 84.9%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_advanced.py:59
+   Location 2: services/knowledge_base_services/core/supply_chain_service_advanced.py:65
+
+   Differences:
+      -            logger.info("Mock ModelRegistryService initialized")
+      +            logger.info("Mock DataProcessor initialized")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: analyze_dataset_with_knowledge_base()
+   Similarity: 84.3%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:174
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v2.py:344
+
+   Differences:
+      -        """Analyze dataset - business logic only"""
+      +        """
+      +        REAL dataset analysis using actual dataset with proper fallback handling
+      +        """
+      +        # Extract DataFrame BEFORE caching
+
+   💡 Solution: Consolidate into single implementation
+
+Function: validate_dataset()
+   Similarity: 84.0%
+   Location 1: services/knowledge_base_services/core/knowledge_base_service.py:348
+   Location 2: services/knowledge_base_services/core/knowledge_base_service_OLD.py:127
+
+   Differences:
+      -        """
+      -        Validate dataset against schema - THREAD-SAFE VERSION
+      -        """
+      +        """Validate dataset against schema requirements with enhanced error handling"""
+      -            schema = self.get_dataset_schema(dataset_name, use_cache=True)
+
+   💡 Solution: Consolidate into single implementation
+
+Function: unload_model()
+   Similarity: 82.4%
+   Location 1: services/inference/model_inference_service.py:212
+   Location 2: services/model_serving/model_registry_service.py:463
+
+   Differences:
+      -        """Unload a model to free memory"""
+      -        if model_name in self._loaded_executors:
+      -            del self._loaded_executors[model_name]
+      -            logger.info(f"🗑️  Unloaded {model_name}")
+      +        """Unload a model from cache"""
+
+   💡 Solution: Consolidate into single implementation
+
+Function: unload_model()
+   Similarity: 82.4%
+   Location 1: services/inference/model_inference_service_v1.py:218
+   Location 2: services/model_serving/model_registry_service.py:463
+
+   Differences:
+      -        """Unload a model to free memory"""
+      -        if model_name in self._loaded_executors:
+      -            del self._loaded_executors[model_name]
+      -            logger.info(f"🗑️  Unloaded {model_name}")
+      +        """Unload a model from cache"""
+
+   💡 Solution: Consolidate into single implementation
+
+Function: clear_cache()
+   Similarity: 82.2%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_v2.py:914
+   Location 2: services/model_serving/model_registry_service.py:469
+
+   Differences:
+      -        """Clear all caches"""
+      -        self._analysis_cache.clear()
+      -        logger.info("🧹 Cleared analysis cache")
+      +        """Clear all loaded models from cache"""
+      +        self.loaded_models.clear()
+
+   💡 Solution: Consolidate into single implementation
+
+Function: clear_cache()
+   Similarity: 82.2%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_v3.py:1284
+   Location 2: services/model_serving/model_registry_service.py:469
+
+   Differences:
+      -        """Clear all caches"""
+      -        self._analysis_cache.clear()
+      -        logger.info("🧹 Cleared analysis cache")
+      +        """Clear all loaded models from cache"""
+      +        self.loaded_models.clear()
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _parse_required_features()
+   Similarity: 82.0%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:395
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:592
+
+   Differences:
+      -        """Parse required features"""
+      +        """Parse required features from various formats"""
+      +                # Try JSON parsing first
+      +                import json
+      -            except:
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _infer_target_variable()
+   Similarity: 81.8%
+   Location 1: knowledge_base/relational_kb/sqlite_service.py:508
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v2.py:232
+
+   Differences:
+      -        """Intelligently infer the target variable from dataset columns"""
+      +        """Intelligently infer target variable from dataset columns"""
+      -        target_priority = ['sales', 'demand', 'quantity', 'value', 'target', 'y']
+      +        # Priority order for target detection
+      +        target_priority = ['sales', 'demand', 'quantity', 'value', 'target', 'revenue', 'volume']
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _infer_target_variable()
+   Similarity: 81.8%
+   Location 1: knowledge_base/relational_kb/sqlite_service.py:508
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:712
+
+   Differences:
+      -        """Intelligently infer the target variable from dataset columns"""
+      +        """Intelligently infer target variable from dataset columns"""
+      -        target_priority = ['sales', 'demand', 'quantity', 'value', 'target', 'y']
+      +        # Priority order for target detection
+      +        target_priority = ['sales', 'demand', 'quantity', 'value', 'target', 'revenue', 'volume']
+
+   💡 Solution: Consolidate into single implementation
+
+Function: clear_cache()
+   Similarity: 81.2%
+   Location 1: repositories/model_repository.py:189
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v2.py:914
+
+   Differences:
+      -        """Clear repository cache"""
+      -        self._cache.clear()
+      -        logger.info("🧹 ModelRepository cache cleared")
+      +        """Clear all caches"""
+      +        self._analysis_cache.clear()
+
+   💡 Solution: Consolidate into single implementation
+
+Function: clear_cache()
+   Similarity: 81.2%
+   Location 1: repositories/model_repository.py:189
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:1284
+
+   Differences:
+      -        """Clear repository cache"""
+      -        self._cache.clear()
+      -        logger.info("🧹 ModelRepository cache cleared")
+      +        """Clear all caches"""
+      +        self._analysis_cache.clear()
+
+   💡 Solution: Consolidate into single implementation
+
+Function: close()
+   Similarity: 81.2%
+   Location 1: knowledge_base/relational_kb/sqlite_manager.py:268
+   Location 2: services/knowledge_base_services/core/model_upload_service.py:331
+
+   Differences:
+      -        """Close database connection"""
+      -        if self.conn:
+      -            self.conn.close()
+      +        """Close database connection if owned"""
+      +        if self.owns_connection and self.db_connection:
+
+   💡 Solution: Consolidate into single implementation
+
+Function: get_performance_stats()
+   Similarity: 81.1%
+   Location 1: services/knowledge_base_services/core/knowledge_base_service.py:501
+   Location 2: services/knowledge_base_services/core/knowledge_base_service_OLD.py:256
+
+   Differences:
+      -        """Get performance statistics - THREAD-SAFE VERSION"""
+      +        """Get performance statistics for all models"""
+      -                stats['model_types'][model_type] = stats['model_types'].get(model_type, 0) + 1
+      +                metrics = json.loads(model['performance_metrics'])
+      +                mape = metrics.get('MAPE')
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _validate_with_knowledge_base()
+   Similarity: 80.8%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:410
+   Location 2: services/knowledge_base_services/core/supply_chain_service_advanced.py:511
+
+   Differences:
+      -        """Validate with KB"""
+      +        """Validate dataset against knowledge base schemas"""
+      +        
+      +        # Try to find matching schema in knowledge base
+      +            # Validate against known schema
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _validate_with_knowledge_base()
+   Similarity: 80.8%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:410
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v2.py:261
+
+   Differences:
+      -        """Validate with KB"""
+      +        """Validate dataset against knowledge base schemas"""
+      +        
+      +        # Try to find matching schema in knowledge base
+      +            # Validate against known schema
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _validate_with_knowledge_base()
+   Similarity: 80.8%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:410
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:663
+
+   Differences:
+      -        """Validate with KB"""
+      +        """Validate dataset against knowledge base schemas"""
+      +        
+      +        # Try to find matching schema in knowledge base
+      +            # Validate against known schema
+
+   💡 Solution: Consolidate into single implementation
+
+Function: __init__()
+   Similarity: 80.6%
+   Location 1: knowledge_base/relational_kb/sqlite_schema.py:14
+   Location 2: services/model_serving/smart_model_registry.py:333
+
+   Differences:
+      -    def __init__(self, db_manager):
+      -        self.db = db_manager
+      +    def __init__(self, db_connection):
+      +        self.db = db_connection
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _detect_frequency()
+   Similarity: 80.4%
+   Location 1: services/llm/forecast_agent.py:107
+   Location 2: services/llm/simplified_forecast_agent.py:1222
+
+   Differences:
+      -        """Detect the frequency of the time series data"""
+      +        """Detect data frequency"""
+      +        date_col = None
+      -        # Look for date column more flexibly
+      -        date_col = None
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _create_recommendations_with_primary()
+   Similarity: 80.4%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:295
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v2.py:440
+
+   Differences:
+      -                                            all_models: List[Dict[str, Any]],
+      -                                            selection_result: Dict[str, Any]) -> List[Dict[str, Any]]:
+      -        """Create recommendations with primary model"""
+      -        recommendations = [{
+      +                                        all_models: List[Dict[str, Any]],
+
+   💡 Solution: Consolidate into single implementation
+
+Function: _create_recommendations_with_primary()
+   Similarity: 80.4%
+   Location 1: services/knowledge_base_services/core/supply_chain_service.py:295
+   Location 2: services/knowledge_base_services/core/supply_chain_service_v3.py:454
+
+   Differences:
+      -                                            all_models: List[Dict[str, Any]],
+      -                                            selection_result: Dict[str, Any]) -> List[Dict[str, Any]]:
+      -        """Create recommendations with primary model"""
+      -        recommendations = [{
+      +                                        all_models: List[Dict[str, Any]],
+
+   💡 Solution: Consolidate into single implementation
+
+Function: __init__()
+   Similarity: 80.2%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_advanced.py:38
+   Location 2: services/knowledge_base_services/core/supply_chain_service_advanced.py:49
+
+   Differences:
+      -        def __init__(self, db_path):
+      -            logger.info(f"Mock KnowledgeBaseService initialized with {db_path}")
+      +        def __init__(self): 
+      +            logger.info("Mock RuleEngineService initialized")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: __init__()
+   Similarity: 80.1%
+   Location 1: knowledge_base/relational_kb/sqlite_manager.py:16
+   Location 2: repositories/model_repository.py:22
+
+   Differences:
+      -        self.conn = None
+      -        self._initialize_database()
+      +        self._cache = {}
+      +        logger.info(f"✅ ModelRepository initialized: {db_path}")
+
+   💡 Solution: Consolidate into single implementation
+
+Function: __init__()
+   Similarity: 80.1%
+   Location 1: repositories/model_repository.py:22
+   Location 2: services/model_serving/model_registry_service.py:23
+
+   Differences:
+      -        self._cache = {}
+      -        logger.info(f"✅ ModelRepository initialized: {db_path}")
+      +        self.conn = None
+      +        self._initialize_database()
+
+   💡 Solution: Consolidate into single implementation
+
+Function: __init__()
+   Similarity: 80.0%
+   Location 1: services/knowledge_base_services/core/supply_chain_service_advanced.py:38
+   Location 2: services/knowledge_base_services/core/supply_chain_service_advanced.py:59
+
+   Differences:
+      -        def __init__(self, db_path):
+      -            logger.info(f"Mock KnowledgeBaseService initialized with {db_path}")
+      +        def __init__(self): 
+      +            logger.info("Mock ModelRegistryService initialized")
+
+   💡 Solution: Consolidate into single implementation
+
+
+================================================================================
+🎯 PRIORITY ACTIONS
+================================================================================
+
+1. _create_error_response()
+   Locations: 3
+   Priority: 🔴 HIGH - Core service duplication
+   Action: Consolidate to one location
+
+2. _calculate_compatibility_score()
+   Locations: 3
+   Priority: 🔴 HIGH - Core service duplication
+   Action: Consolidate to one location
+
+3. _validate_with_knowledge_base()
+   Locations: 3
+   Priority: 🔴 HIGH - Core service duplication
+   Action: Consolidate to one location
+
+4. __init__()
+   Locations: 2
+   Priority: 🔴 HIGH - Core service duplication
+   Action: Consolidate to one location
+
+5. close()
+   Locations: 2
+   Priority: 🔴 HIGH - Core service duplication
+   Action: Consolidate to one location
+
+6. _infer_target_variable()
+   Locations: 2
+   Priority: 🔴 HIGH - Core service duplication
+   Action: Consolidate to one location
+
+7. _create_success_response()
+   Locations: 2
+   Priority: 🔴 HIGH - Core service duplication
+   Action: Consolidate to one location
+
+8. clear_cache()
+   Locations: 2
+   Priority: 🔴 HIGH - Core service duplication
+   Action: Consolidate to one location
+
+9. set_knowledge_base()
+   Locations: 2
+   Priority: 🔴 HIGH - Core service duplication
+   Action: Consolidate to one location
+
+10. load_model_from_metadata()
+   Locations: 2
+   Priority: 🔴 HIGH - Core service duplication
+   Action: Consolidate to one location
+
+
+================================================================================
+📊 SUMMARY STATISTICS
+================================================================================
+Total Functions Analyzed: 662
+Functions with Exact Duplicates: 49
+Total Exact Duplicate Instances: 101
+Similar Function Pairs: 66

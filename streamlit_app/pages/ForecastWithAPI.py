@@ -25,6 +25,7 @@ st.set_page_config(
     layout="wide"
 )
 
+
 # Custom CSS
 st.markdown("""
 <style>
@@ -335,14 +336,20 @@ Ready! Try:
             with st.spinner("Analyzing..."):
                 result = api_request("POST", "/api/v1/analyze", {"session_id": st.session_state.session_id})
                 if result:
+                    # SAFE ACCESS to analysis results
+                    status = result.get('status', 'unknown')
+                    compatible_models = result.get('compatible_models', [])
+                    selected_model = result.get('selected_model', {})
+                    recommendations = result.get('recommendations', [])
+                    
                     msg = f"""✅ **Analysis Complete**
 
-**Status:** {result['status']}
-**Models:** {len(result.get('compatible_models', []))}
-**Selected:** {result.get('selected_model', {}).get('model_name', 'Unknown')}
+    **Status:** {status}
+    **Models:** {len(compatible_models)}
+    **Selected:** {selected_model.get('model_name', 'Unknown')}
 
-{chr(10).join('• ' + r for r in result.get('recommendations', [])[:3])}
-"""
+    {chr(10).join('• ' + r for r in recommendations[:3])}
+    """
                     st.session_state.messages.append({"role": "assistant", "content": msg})
                     st.rerun()
     
@@ -467,7 +474,7 @@ for msg in st.session_state.messages:
 if st.session_state.messages and st.session_state.forecast_data:
     show_forecast_chart(st.session_state.forecast_data)
 
-# Chat input
+# Chat input - FIXED VERSION with safe response handling
 if prompt := st.chat_input(
     "Ask me anything..." if st.session_state.session_id else "Upload dataset or switch session...",
     disabled=not st.session_state.session_id
@@ -484,15 +491,33 @@ if prompt := st.chat_input(
                 "session_id": st.session_state.session_id
             })
             
+            # SAFE RESPONSE HANDLING - FIXED
             if result:
+                # Check if response exists safely
+                if 'response' in result:
+                    assistant_response = result['response']
+                elif 'error' in result:
+                    assistant_response = f"❌ Error: {result['error']}"
+                else:
+                    assistant_response = "❌ Unexpected response format from server"
+                
+                # Add to messages
                 st.session_state.messages.append({
                     "role": "assistant",
-                    "content": result['response']
+                    "content": assistant_response
                 })
                 
-                if result.get('has_forecast_data'):
+                # SAFE access to forecast data
+                if result.get('has_forecast_data') and 'forecast_data' in result:
                     st.session_state.forecast_data = result['forecast_data']
                 
+                st.rerun()
+            else:
+                # Handle case where result is None (API error)
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": "❌ Failed to get response from server. Please try again."
+                })
                 st.rerun()
 
 # Welcome screen

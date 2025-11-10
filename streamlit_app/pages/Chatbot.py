@@ -188,7 +188,7 @@ elif st.session_state.step == 'analyze':
                                 'missing_values': df.isnull().sum().sum(),
                                 'date_range': f"{df[date_column].min()} to {df[date_column].max()}"
                             },
-                            'compatible_models': ['ARIMA', 'Prophet', 'LightGBM'],
+                            'compatible_models': ['Prophet', 'LightGBM', 'XGBoost'],
                             'recommendations': ['Dataset looks good for forecasting'],
                             'issues': []
                         }

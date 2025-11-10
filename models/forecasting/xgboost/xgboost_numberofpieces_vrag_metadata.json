@@ -1,0 +1,529 @@
+{
+  "model_identity": {
+    "model_id": "xgboost_numberofpieces_v1",
+    "name": "XGBoost Multi-Location NumberOfPieces Forecaster",
+    "model_type": "XGBoost_Multi_Output_Regression",
+    "framework": "xgboost_sklearn_pipeline",
+    "architecture": "gradient_boosted_trees",
+    "domain": "supply_chain_logistics",
+    "industry": "retail_delivery_multi_location",
+    "created_at": "2024-11-06",
+    "version": "1.0",
+    "model_file": "xgboost_multi_location_model.joblib",
+    "preprocessor_included": "yes_in_sklearn_pipeline",
+    "schema_file": "xgboost_numberofpieces_input_schema.json"
+  },
+  "use_case_profile": {
+    "forecasting_type": "monthly_pieces_prediction_per_location",
+    "forecast_frequency": "MONTHLY",
+    "model_category": "supervised_multi_location_regression",
+    "granularity": "location_level_after_monthly_aggregation",
+    "target_variable": "NumberOfPieces",
+    "horizon": "one_month_ahead",
+    "business_context": "supply_chain_multi_store_operations",
+    "best_for": [
+      "monthly_inventory_planning",
+      "location_specific_demand_forecasting",
+      "multi_store_capacity_planning",
+      "customer_location_volume_prediction",
+      "seasonal_pattern_recognition",
+      "comparative_location_analysis",
+      "resource_allocation_across_locations",
+      "supply_chain_optimization"
+    ],
+    "not_recommended_for": [
+      "daily_intraday_predictions",
+      "real_time_forecasting",
+      "new_locations_without_any_history",
+      "item_level_sku_forecasting",
+      "locations_with_less_than_6_months_history",
+      "extreme_event_prediction",
+      "markets_completely_different_from_training",
+      "weekly_forecasts_directly"
+    ],
+    "typical_users": [
+      "supply_chain_managers",
+      "operations_planners",
+      "inventory_managers",
+      "logistics_coordinators",
+      "store_operations_teams",
+      "regional_managers",
+      "capacity_planners"
+    ]
+  },
+  "performance_profile": {
+    "train": {
+      "r2_score": "0.92_to_0.96",
+      "mae": "200_to_400_pieces",
+      "rmse": "300_to_600_pieces",
+      "mape": "8_to_12_percent",
+      "confidence_level": "high"
+    },
+    "test": {
+      "r2_score": "0.88_to_0.94",
+      "mae": "250_to_500_pieces",
+      "rmse": "400_to_700_pieces",
+      "mape": "10_to_15_percent",
+      "confidence_level": "high"
+    },
+    "business_interpretation": {
+      "variance_explained": "88-94%",
+      "average_error_pieces": "250-500 pieces",
+      "average_error_percentage": "10-15%",
+      "reliability": "Suitable for monthly operational and capacity planning across multiple locations"
+    },
+    "training_info": {
+      "model_type": "XGBoost with sklearn Pipeline",
+      "n_estimators": 200,
+      "max_depth": 6,
+      "learning_rate": 0.05,
+      "training_samples": "varies_based_on_data_~1600_to_2000_monthly_records",
+      "test_samples": "20_percent_of_data",
+      "train_period": "first_80_percent_of_time_series",
+      "test_period": "last_20_percent_of_time_series",
+      "time_based_split": "yes_prevents_data_leakage",
+      "aggregation_level": "monthly_by_customer_location"
+    }
+  },
+  "features": {
+    "input_features": {
+      "categorical": [
+        "Customer",
+        "Location",
+        "BusinessType"
+      ],
+      "numerical": [
+        "TotalRevenue",
+        "month",
+        "quarter",
+        "year",
+        "lag_1",
+        "lag_3",
+        "lag_6",
+        "roll_mean_3",
+        "roll_std_3",
+        "roll_mean_6",
+        "roll_std_6",
+        "roll_mean_12",
+        "roll_std_12"
+      ],
+      "total_raw_features": 16
+    },
+    "feature_engineering": {
+      "aggregation": {
+        "level": "monthly",
+        "grouping": "Customer + Location + BusinessType + YearMonth",
+        "method": {
+          "NumberOfPieces": "sum",
+          "TotalRevenue": "sum"
+        }
+      },
+      "temporal_features_extracted": [
+        "month (1-12)",
+        "quarter (1-4)",
+        "year"
+      ],
+      "lag_features": {
+        "lag_1": "previous_month_value",
+        "lag_3": "3_months_ago_value",
+        "lag_6": "6_months_ago_value",
+        "calculation": "per_customer_location_group"
+      },
+      "rolling_statistics": {
+        "windows": [3, 6, 12],
+        "metrics": ["mean", "std"],
+        "calculation": "per_customer_location_group",
+        "purpose": "capture_trends_and_volatility"
+      }
+    },
+    "preprocessing": {
+      "categorical_encoding": "OneHotEncoder",
+      "categorical_unknown_handling": "ignore_creates_zero_vector",
+      "numeric_scaling": "none_xgboost_handles_raw_values",
+      "target_transformation": "none_raw_values_used",
+      "pipeline": "sklearn_ColumnTransformer_with_Pipeline"
+    },
+    "feature_importance_notes": {
+      "high_importance": [
+        "lag_1 (last month's value)",
+        "roll_mean_3 (recent trend)",
+        "Location (store-specific patterns)",
+        "month (seasonality)"
+      ],
+      "medium_importance": [
+        "lag_3, lag_6 (historical patterns)",
+        "Customer (customer-specific volumes)",
+        "TotalRevenue (correlated feature)"
+      ],
+      "low_importance": [
+        "roll_std features (volatility indicators)",
+        "year (slower-moving trend)"
+      ]
+    },
+    "all_categorical_features_after_encoding": "Location_* (17), Customer_* (12), BusinessType_* (3) = ~32 one-hot encoded features",
+    "total_features_after_preprocessing": "~45_features (32 categorical + 13 numeric)"
+  },
+  "data_info": {
+    "source": "user_uploaded_csv",
+    "expected_format": "transaction_level_or_daily_deliveries",
+    "aggregation": "daily_to_monthly_per_customer_location",
+    "total_records_after_aggregation": "varies_typically_1600_to_2500_monthly_records",
+    "train_records": "80_percent",
+    "test_records": "20_percent",
+    "typical_train_period": "24_to_48_months",
+    "typical_test_period": "6_to_12_months",
+    "unique_customers": "12_typical",
+    "unique_locations": "17_typical",
+    "unique_business_types": "3_typical",
+    "data_frequency": "monthly_after_aggregation",
+    "data_quality": {
+      "completeness": "100_percent_after_removing_nulls",
+      "consistency": "high_validated_grouping",
+      "requires_cleaning": "minimal",
+      "duplicate_check": "validated_no_duplicate_month_customer_location_combinations"
+    }
+  },
+  "model_parameters": {
+    "xgboost_settings": {
+      "n_estimators": 200,
+      "learning_rate": 0.05,
+      "max_depth": 6,
+      "min_child_weight": 3,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "random_state": 42,
+      "n_jobs": -1,
+      "objective": "reg:squarederror"
+    },
+    "preprocessing_settings": {
+      "categorical_encoder": "OneHotEncoder",
+      "handle_unknown": "ignore",
+      "sparse_output": false
+    },
+    "training_settings": {
+      "test_size": 0.2,
+      "time_based_split": true,
+      "random_state": 42
+    }
+  },
+  "architecture_details": {
+    "model_structure": [
+      "Input: Raw features (Customer, Location, BusinessType, TotalRevenue, time features, lags, rolling stats)",
+      "Preprocessing Pipeline:",
+      "  - OneHotEncoder for categorical features (Customer, Location, BusinessType)",
+      "  - Passthrough for numeric features (13 features)",
+      "XGBoost Regressor:",
+      "  - 200 gradient boosted decision trees",
+      "  - Each tree: max depth 6, min child weight 3",
+      "  - Learning rate: 0.05 (slow, steady learning)",
+      "  - Subsample: 0.8 (80% data per tree)",
+      "  - Column sample: 0.8 (80% features per tree)",
+      "Output: Predicted NumberOfPieces for next month"
+    ],
+    "total_trees": 200,
+    "model_size": "medium_~5_to_15_MB",
+    "outputs": 1,
+    "interpretability": "high_feature_importance_available"
+  },
+  "technical_specifications": {
+    "input_requirements": {
+      "required_columns_training": [
+        "WorkDate",
+        "Customer",
+        "Location",
+        "BusinessType",
+        "NumberOfPieces",
+        "TotalRevenue"
+      ],
+      "required_columns_prediction": [
+        "Historical data automatically retrieved",
+        "User only selects location(s)"
+      ],
+      "data_format": "pandas_dataframe_or_csv",
+      "preprocessing_pipeline": "sklearn_ColumnTransformer_Pipeline",
+      "required_libraries": [
+        "xgboost",
+        "scikit-learn",
+        "pandas",
+        "numpy",
+        "joblib"
+      ]
+    },
+    "compatibility": {
+      "framework": "xgboost_1.x_or_2.x",
+      "python_version": "3.7+",
+      "requires_gpu": "no_cpu_only",
+      "inference_mode": "single_or_batch_prediction",
+      "deployment_options": [
+        "local_jupyter_notebook",
+        "streamlit_app",
+        "cloud_api",
+        "docker_container"
+      ]
+    },
+    "dependencies": {
+      "xgboost": ">=1.5.0",
+      "scikit-learn": ">=0.24.0",
+      "pandas": ">=1.0.0",
+      "numpy": ">=1.18.0",
+      "joblib": ">=0.14.0",
+      "matplotlib": ">=3.0.0 (for visualizations)",
+      "seaborn": ">=0.10.0 (for visualizations)",
+      "ipywidgets": ">=7.0.0 (for interactive predictions)"
+    }
+  },
+  "operational_profile": {
+    "inference_speed": "very_fast_batch_or_single_location",
+    "resource_requirements": "low_cpu_only",
+    "memory_footprint": "low_to_medium_5_to_20_MB",
+    "scalability": "handles_hundreds_of_locations_efficiently",
+    "deployment_complexity": "low_single_joblib_file",
+    "update_frequency": "recommended_monthly_or_quarterly",
+    "monitoring_kpis": [
+      "R² > 0.85",
+      "MAPE < 15%",
+      "MAE stable over time",
+      "No systematic bias per location",
+      "Feature importance stability"
+    ],
+    "retraining_triggers": [
+      "MAPE exceeds 15% for 2+ consecutive months",
+      "R² drops below 0.80",
+      "New locations added",
+      "Major business changes",
+      "Seasonal patterns shift",
+      "Every 3-6 months recommended"
+    ]
+  },
+  "business_value": {
+    "primary_benefits": [
+      "88-94% of monthly demand variance explained",
+      "Average prediction error: 10-15%",
+      "Enables proactive capacity planning across all locations",
+      "Supports location-specific inventory decisions",
+      "Handles multiple locations simultaneously",
+      "Captures seasonal patterns and trends",
+      "Fast predictions for operational planning",
+      "Interpretable feature importance"
+    ],
+    "suitable_business_cases": [
+      "monthly_inventory_planning",
+      "location_capacity_forecasting",
+      "resource_allocation_decisions",
+      "seasonal_staffing_planning",
+      "comparative_store_performance",
+      "supply_chain_optimization",
+      "budget_planning_by_location",
+      "growth_trend_analysis"
+    ],
+    "roi_potential": {
+      "operational_efficiency": "15-20% improvement in resource planning accuracy",
+      "inventory_optimization": "reduced stockouts and overstocking",
+      "cost_savings": "better capacity utilization across locations",
+      "decision_quality": "data-driven location-specific planning"
+    },
+    "model_advantages": [
+      "single_model_handles_all_17_locations",
+      "learns_location_specific_patterns",
+      "captures_customer_and_business_type_variations",
+      "handles_seasonality_automatically",
+      "uses_recent_history_and_long_term_trends",
+      "fast_training_and_inference",
+      "highly_interpretable_feature_importance",
+      "robust_to_missing_data_with_proper_feature_engineering",
+      "no_gpu_required",
+      "easy_to_deploy_and_maintain"
+    ],
+    "model_limitations": [
+      "requires_at_least_12_months_historical_data",
+      "works_best_with_known_locations_and_customers",
+      "monthly_granularity_only",
+      "single_month_ahead_horizon",
+      "new_locations_need_at_least_6_months_data",
+      "cannot_predict_extreme_events_or_disruptions",
+      "accuracy_varies_by_location_data_quality",
+      "assumes_future_patterns_similar_to_past"
+    ]
+  },
+  "usage_notes": {
+    "how_to_load_model": "from joblib import load\nmodel = load('models/xgboost_multi_location_model.joblib')",
+    "how_to_load_additional_data": "df_features = pd.read_csv('models/processed_data.csv')\nwith open('models/feature_info.json', 'r') as f:\n    feature_info = json.load(f)\nwith open('models/locations_info.json', 'r') as f:\n    locations = json.load(f)['locations']",
+    "required_input_columns": [
+      "WorkDate",
+      "Customer",
+      "Location",
+      "BusinessType",
+      "NumberOfPieces",
+      "TotalRevenue"
+    ],
+    "output_format": "Single value: Predicted NumberOfPieces for next month for selected location(s)",
+    "important_notes": [
+      "Model uses raw values (no log transform needed)",
+      "Automatically aggregates daily data to monthly",
+      "Groups by Customer + Location + BusinessType + Month",
+      "Creates lag and rolling features per group",
+      "Requires same feature engineering as training",
+      "Works best with locations that have consistent history",
+      "Unknown categories handled but may reduce accuracy",
+      "User can select single or multiple locations for prediction"
+    ],
+    "prediction_workflow": [
+      "1. Load model and historical data",
+      "2. User selects one or multiple locations",
+      "3. For each location:",
+      "   a. Retrieve last known monthly record",
+      "   b. Calculate lag features (1, 3, 6 months back)",
+      "   c. Calculate rolling statistics (3, 6, 12 month windows)",
+      "   d. Extract temporal features (month, quarter, year for next month)",
+      "4. Create feature DataFrame with all required columns",
+      "5. Model predicts: predictions = model.predict(features_df)",
+      "6. Display results with comparison to last month and change %",
+      "7. Show visualizations (comparison charts, trends)"
+    ],
+    "interactive_prediction": {
+      "method": "ipywidgets_in_jupyter",
+      "features": [
+        "Multi-select dropdown for locations",
+        "Select All button",
+        "Clear Selection button",
+        "Generate Forecast button",
+        "Automatic visualization generation",
+        "Comparison tables and charts"
+      ]
+    }
+  },
+  "inference_example_code": "\n# =========================================================\n# EXAMPLE: HOW TO USE THIS MODEL FOR PREDICTIONS\n# =========================================================\n\nimport pandas as pd\nimport numpy as np\nimport json\nfrom joblib import load\nfrom datetime import datetime\nimport matplotlib.pyplot as plt\n\n# 1. Load model and supporting files\nmodel = load('models/xgboost_multi_location_model.joblib')\ndf_features = pd.read_csv('models/processed_data.csv')\ndf_features['WorkDate'] = pd.to_datetime(df_features['WorkDate'])\n\nwith open('models/feature_info.json', 'r') as f:\n    feature_info = json.load(f)\n    feature_cols = feature_info['feature_cols']\n\nwith open('models/locations_info.json', 'r') as f:\n    available_locations = json.load(f)['locations']\n\nprint(f\"Available locations: {available_locations}\")\n\n# 2. User selects location(s) to predict\nselected_locations = ['Dubai', 'Riyadh', 'Jeddah']  # Can be single or multiple\n\n# 3. Calculate next month date\nlast_date = df_features['WorkDate'].max()\nnext_month_date = last_date + pd.DateOffset(months=1)\n\nprint(f\"\\nPredicting for: {next_month_date.strftime('%B %Y')}\")\nprint(f\"Last data point: {last_date.strftime('%B %Y')}\\n\")\n\n# 4. Generate predictions for each selected location\nresults = []\n\nfor location_name in selected_locations:\n    # Get location data\n    location_data = df_features[df_features['Location'] == location_name]\n    \n    if len(location_data) == 0:\n        print(f\"No data for {location_name}\")\n        continue\n    \n    # Get last row\n    last_row = location_data.iloc[-1]\n    \n    # Create features for next month\n    next_features = {\n        'Customer': last_row['Customer'],\n        'Location': location_name,\n        'BusinessType': last_row['BusinessType'],\n        'month': next_month_date.month,\n        'quarter': next_month_date.quarter,\n        'year': next_month_date.year,\n        'lag_1': last_row['NumberOfPieces'],\n        'lag_3': location_data['NumberOfPieces'].iloc[-3] if len(location_data) > 2 else last_row['NumberOfPieces'],\n        'lag_6': location_data['NumberOfPieces'].iloc[-6] if len(location_data) > 5 else last_row['NumberOfPieces'],\n        'roll_mean_3': location_data['NumberOfPieces'].tail(3).mean(),\n        'roll_std_3': location_data['NumberOfPieces'].tail(3).std() if len(location_data) >= 3 else 0,\n        'roll_mean_6': location_data['NumberOfPieces'].tail(6).mean(),\n        'roll_std_6': location_data['NumberOfPieces'].tail(6).std() if len(location_data) >= 6 else 0,\n        'roll_mean_12': location_data['NumberOfPieces'].tail(12).mean(),\n        'roll_std_12': location_data['NumberOfPieces'].tail(12).std() if len(location_data) >= 12 else 0,\n        'TotalRevenue': last_row['TotalRevenue']\n    }\n    \n    # Create DataFrame\n    next_df = pd.DataFrame([next_features])[feature_cols]\n    \n    # Predict\n    prediction = model.predict(next_df)[0]\n    last_value = last_row['NumberOfPieces']\n    change_pct = ((prediction - last_value) / last_value) * 100\n    \n    results.append({\n        'Location': location_name,\n        'Last_Month': last_value,\n        'Predicted': prediction,\n        'Change_%': change_pct\n    })\n\n# 5. Display results\nresults_df = pd.DataFrame(results)\nprint(\"\\n\" + \"=\"*70)\nprint(\"FORECAST RESULTS\")\nprint(\"=\"*70)\nprint(results_df.to_string(index=False))\n\n# 6. Summary statistics\ntotal_predicted = results_df['Predicted'].sum()\ntotal_last = results_df['Last_Month'].sum()\ntotal_change = ((total_predicted - total_last) / total_last) * 100\n\nprint(f\"\\nTotal Predicted:  {total_predicted:,.0f}\")\nprint(f\"Total Last Month: {total_last:,.0f}\")\nprint(f\"Overall Change:   {total_change:+.2f}%\")\n\n# 7. Visualization (optional)\nimport matplotlib.pyplot as plt\n\nplt.figure(figsize=(12, 6))\nx = range(len(results_df))\nwidth = 0.35\nplt.bar([i - width/2 for i in x], results_df['Last_Month'], width, label='Last Month', alpha=0.7)\nplt.bar([i + width/2 for i in x], results_df['Predicted'], width, label='Predicted', alpha=0.7)\nplt.xlabel('Location')\nplt.ylabel('NumberOfPieces')\nplt.title(f'Forecast for {next_month_date.strftime(\"%B %Y\")}')\nplt.xticks(x, results_df['Location'], rotation=45)\nplt.legend()\nplt.grid(True, alpha=0.3, axis='y')\nplt.tight_layout()\nplt.show()\n",
+  "model_card": {
+    "intended_use": "Monthly demand forecasting (NumberOfPieces) for multiple store locations in supply chain operations",
+    "primary_use_cases": [
+      "Inventory planning across multiple stores",
+      "Capacity planning per location",
+      "Resource allocation decisions",
+      "Seasonal demand prediction",
+      "Location performance forecasting",
+      "Comparative store analysis"
+    ],
+    "out_of_scope": [
+      "Daily_or_weekly_forecasting",
+      "Real_time_predictions",
+      "New_locations_without_minimum_6_months_history",
+      "Item_level_SKU_forecasting",
+      "Long_term_strategic_planning_beyond_12_months",
+      "Markets_with_completely_different_patterns"
+    ],
+    "ethical_considerations": [
+      "May perpetuate historical biases in location resource allocation",
+      "Predictions assume stable business conditions",
+      "Should not be sole basis for hiring/firing decisions",
+      "May not account for unprecedented disruptions (pandemics, natural disasters)",
+      "Location-based predictions should be reviewed for fairness",
+      "Model trained on historical data may not capture rapid market changes"
+    ],
+    "caveats": [
+      "Performance varies by location and data quality",
+      "Requires minimum 12 months historical data for best results",
+      "New locations need at least 6 months to establish patterns",
+      "Accuracy degrades for extreme events not in training data",
+      "Monthly aggregation may smooth over important daily variations",
+      "Assumes future patterns similar to historical patterns",
+      "Less accurate during major market disruptions",
+      "Unknown customers/locations handled but may reduce accuracy"
+    ],
+    "recommendations": [
+      "Monitor prediction accuracy monthly per location",
+      "Retrain model every 3-6 months with new data",
+      "Validate predictions against business knowledge",
+      "Use human oversight for high-stakes capacity decisions",
+      "Track per-location accuracy metrics separately",
+      "Investigate locations with consistently high errors",
+      "Combine model predictions with domain expertise",
+      "Document prediction failures for continuous improvement",
+      "Set up automated alerts for prediction drift",
+      "Maintain backup planning methods during disruptions"
+    ],
+    "maintenance_schedule": {
+      "monthly": [
+        "Monitor prediction accuracy",
+        "Check for prediction drift",
+        "Review per-location performance"
+      ],
+      "quarterly": [
+        "Retrain model with new data",
+        "Update feature importance analysis",
+        "Validate against business metrics",
+        "Review and update known categories"
+      ],
+      "annually": [
+        "Comprehensive model audit",
+        "Consider architecture improvements",
+        "Evaluate alternative algorithms",
+        "Update documentation"
+      ]
+    }
+  },
+  "saved_files": {
+    "model_file": {
+      "name": "xgboost_multi_location_model.joblib",
+      "path": "models/xgboost_multi_location_model.joblib",
+      "description": "Complete trained XGBoost model with preprocessing pipeline",
+      "size": "5_to_15_MB_typical"
+    },
+    "processed_data": {
+      "name": "processed_data.csv",
+      "path": "models/processed_data.csv",
+      "description": "Historical monthly data with all engineered features",
+      "purpose": "Used to generate lag and rolling features for predictions"
+    },
+    "feature_info": {
+      "name": "feature_info.json",
+      "path": "models/feature_info.json",
+      "description": "Feature column names and types",
+      "contents": {
+        "feature_cols": "list of all feature column names in order",
+        "categorical_features": "list of categorical feature names",
+        "numeric_features": "list of numeric feature names",
+        "target_col": "target variable name"
+      }
+    },
+    "locations_info": {
+      "name": "locations_info.json",
+      "path": "models/locations_info.json",
+      "description": "List of all trained locations",
+      "contents": {
+        "locations": "array of location names"
+      }
+    },
+    "model_metrics": {
+      "name": "model_metrics.json",
+      "path": "models/model_metrics.json",
+      "description": "Training and testing performance metrics",
+      "contents": {
+        "train_mae": "training set mean absolute error",
+        "test_mae": "testing set mean absolute error",
+        "train_r2": "training set R² score",
+        "test_r2": "testing set R² score"
+      }
+    }
+  },
+  "version_history": {
+    "v1.0": {
+      "date": "2024-11-06",
+      "changes": [
+        "Initial model creation",
+        "XGBoost with 200 trees",
+        "Multi-location support with feature engineering",
+        "Monthly aggregation per Customer-Location",
+        "Lag features (1, 3, 6 months)",
+        "Rolling statistics (3, 6, 12 months)",
+        "Interactive prediction interface",
+        "Comprehensive documentation"
+      ]
+    }
+  },
+  "contact_and_support": {
+    "model_owner": "Supply Chain Analytics Team",
+    "documentation": "See accompanying README and Jupyter notebook",
+    "issues": "Report prediction errors or data quality issues",
+    "updates": "Check for model updates quarterly"
+  }
+}

@@ -644,7 +644,7 @@ class SQLiteService:
             'forecast_accuracy_by_model': {
                 'LightGBM_Monthly': 0.85,
                 'Prophet': 0.78,
-                'ARIMA': 0.72
+                'XGBoost': 0.75
             }
         }
 
@@ -656,7 +656,7 @@ class SQLiteService:
             'utilization_by_model': {
                 'LightGBM_Monthly': 45,
                 'Prophet': 35,
-                'ARIMA': 20
+                'XGBoost': 20
             }
         }
 
@@ -683,7 +683,7 @@ class SQLiteService:
         return [
             "Consider retraining LightGBM models with recent data",
             "Prophet model showing improved seasonal accuracy",
-            "Evaluate ARIMA model performance for potential replacement"
+            "Evaluate XGBoost model performance for potential replacement"
         ]
 
     # ============================================================================

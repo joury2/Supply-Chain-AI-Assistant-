@@ -103,6 +103,7 @@ class ForecastAgent:
             allow_dangerous_deserialization=True
         )
 
+
     def _detect_frequency(self) -> str:
         """Detect the frequency of the time series data"""
         if self.current_dataset_df is None:
@@ -176,6 +177,7 @@ class ForecastAgent:
             dataset_info['data'] = df
         
         return dataset_info
+
 
     def _create_tools(self) -> list:
         """Create LangChain tools from your backend functions"""
@@ -762,6 +764,7 @@ class ForecastAgent:
         
         return tools
 
+
     # ... [Keep all the other methods the same as before] ...
 
     def _create_agent(self) -> AgentExecutor:
@@ -839,6 +842,7 @@ Thought: {agent_scratchpad}"""
         )
         
         return agent_executor
+
 
     def upload_dataset(self, df: pd.DataFrame):
         """Upload a dataset for analysis"""
